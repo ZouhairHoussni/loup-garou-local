@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🐺 Loup-Garou - Maître du Jeu</title>
+  <link rel="stylesheet" href="/static/tv-game.css">
+</head>
+
+<body>
+  <div id="app" class="tv-app">
+    <!-- Animated background canvas -->
+    <canvas id="fxCanvas"></canvas>
+    
+    <!-- Ambient particles -->
+    <div class="ambient-particles" id="ambientParticles"></div>
+
+    <!-- ==================== SCREEN: LOBBY ==================== -->
+    <div id="screenLobby" class="screen active">
+      <div class="lobby-container">
+        <!-- Title with medieval flair -->
+        <div class="lobby-header">
+          <div class="torch left">🔥</div>
+          <div class="title-crest">
+            <div class="crest-icon">🐺</div>
+            <h1 class="game-title">Loup-Garou</h1>
+            <p class="game-subtitle">de Thiercelieux</p>
+          </div>
+          <div class="torch right">🔥</div>
+        </div>
+
+        <!-- Configuration Panel -->
+        <div class="config-panel" id="configPanel">
+          <div class="config-header" id="configToggle">
+            <span>⚙️ Configuration de la Partie</span>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="config-body" id="configBody">
+            <!-- Timers -->
+            <div class="config-section">
+              <h3>⏱️ Durées (secondes)</h3>
+              <div class="config-grid">
+                <div class="config-item">
+                  <label>Actions nuit</label>
+                  <input type="number" id="cfgNightAction" value="22" min="10" max="120">
+                </div>
+                <div class="config-item">
+                  <label>Discussion</label>
+                  <input type="number" id="cfgDayDiscuss" value="15" min="10" max="300">
+                </div>
+                <div class="config-item">
+                  <label>Vote</label>
+                  <input type="number" id="cfgVoteTime" value="25" min="10" max="120">
+                </div>
+                <div class="config-item">
+                  <label>Résultats</label>
+                  <input type="number" id="cfgResultTime" value="5" min="3" max="30">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Roles as Cards -->
+            <div class="config-section">
+              <h3>🎭 Rôles à inclure</h3>
+              <div class="roles-cards-grid" id="rolesCardsGrid">
+                <div class="role-config-card active" data-role="seer">
+                  <input type="checkbox" id="cfgRoleSeer" checked>
+                  <div class="card-image">
+                    <img src="/static/cards/voyante.jpg" alt="Voyante">
+                  </div>
+                  <div class="card-name">Voyante</div>
+                </div>
+                <div class="role-config-card active" data-role="witch">
+                  <input type="checkbox" id="cfgRoleWitch" checked>
+                  <div class="card-image">
+                    <img src="/static/cards/sorcerer.jpg" alt="Sorcière">
+                  </div>
+                  <div class="card-name">Sorcière</div>
+                </div>
+                <div class="role-config-card active" data-role="cupid">
+                  <input type="checkbox" id="cfgRoleCupid" checked>
+                  <div class="card-image">
+                    <img src="/static/cards/cupidon.jpg" alt="Cupidon">
+                  </div>
+                  <div class="card-name">Cupidon</div>
+                </div>
+                <div class="role-config-card disabled" data-role="hunter">
+                  <input type="checkbox" id="cfgRoleHunter" disabled>
+                  <div class="card-image">
+                    <img src="/static/cards/hunter.jpg" alt="Chasseur">
+                  </div>
+                  <div class="card-name">Chasseur</div>
+                  <span class="card-badge">Bientôt</span>
+                </div>
+              </div>
+            </div>
+
+            <button id="applyConfigBtn" class="btn-config">⚔️ Appliquer la Configuration</button>
+          </div>
+        </div>
+
+        <!-- Players Circle -->
+        <div class="village-circle">
+          <div class="village-center">
+            <div class="player-count">
+              <span id="playerCount">0</span>
+              <small>villageois</small>
+            </div>
+          </div>
+          <div class="players-ring" id="playersRing">
+            <!-- Players appear here in a circle -->
+          </div>
+        </div>
+
+        <!-- Join Info -->
+        <div class="join-banner">
+          <div class="join-qr">📱</div>
+          <div class="join-info">
+            <div class="join-label">Rejoindre la partie</div>
+            <code id="joinUrl">http://...</code>
+          </div>
+        </div>
+
+        <!-- Start Button -->
+        <button id="startBtn" class="btn-start" disabled>
+          <span class="btn-icon">⚔️</span>
+          <span>Que la chasse commence!</span>
+        </button>
+        <p class="min-players-hint">Minimum 5 joueurs requis</p>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: NIGHT ==================== -->
+    <div id="screenNight" class="screen">
+      <div class="night-container">
+        <div class="moon-phase">
+          <div class="moon">🌙</div>
+          <div class="stars">✨</div>
+        </div>
+        
+        <div class="night-info">
+          <h2 class="night-title">Nuit <span id="nightNumber">1</span></h2>
+          <p class="night-subtitle" id="nightSubtitle">Le village s'endort...</p>
+        </div>
+
+        <div class="night-timer">
+          <div class="timer-circle">
+            <span id="nightTimer">--</span>
+          </div>
+        </div>
+
+        <!-- Current action indicator -->
+        <div class="current-action" id="currentAction">
+          <div class="action-icon" id="actionIcon">🐺</div>
+          <div class="action-text" id="actionText">Les loups chassent...</div>
+        </div>
+
+        <!-- Sleeping villagers -->
+        <div class="sleeping-village" id="sleepingVillage">
+          <!-- Players shown sleeping -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: DAWN (Death Reveal) ==================== -->
+    <div id="screenDawn" class="screen">
+      <div class="dawn-container">
+        <div class="sun-rising">
+          <div class="sun">☀️</div>
+          <div class="rays"></div>
+        </div>
+        
+        <h2 class="dawn-title">L'aube se lève...</h2>
+        
+        <!-- Death queue - shows deaths one by one -->
+        <div class="death-theater" id="deathTheater">
+          <div class="death-stage">
+            <div class="death-card" id="deathCard">
+              <div class="card-glow"></div>
+              <img id="deathCardImg" src="/static/cards/verso.jpg" alt="">
+              <div class="death-info">
+                <div class="victim-name" id="victimName">???</div>
+                <div class="victim-role" id="victimRole">???</div>
+                <div class="death-cause" id="deathCause">a été trouvé mort</div>
+              </div>
+            </div>
+          </div>
+          <div class="death-queue-indicator">
+            <span id="deathCurrent">1</span> / <span id="deathTotal">1</span>
+          </div>
+        </div>
+
+        <!-- No death message -->
+        <div class="no-death" id="noDeath" style="display:none;">
+          <div class="miracle-icon">✨</div>
+          <p>Le village se réveille... personne n'est mort cette nuit!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: DAY ==================== -->
+    <div id="screenDay" class="screen">
+      <div class="day-container">
+        <div class="day-header">
+          <div class="sun-icon">☀️</div>
+          <h2>Jour <span id="dayNumber">1</span></h2>
+          <p class="day-subtitle">Le village délibère</p>
+        </div>
+
+        <div class="day-timer">
+          <div class="hourglass">⏳</div>
+          <span id="dayTimer">--</span>
+        </div>
+
+        <!-- Living players arranged in a circle -->
+        <div class="council-circle" id="councilCircle">
+          <!-- Players in deliberation -->
+        </div>
+
+        <div class="discussion-hint">
+          <p>💬 Discutez et trouvez les loups!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: VOTE ==================== -->
+    <div id="screenVote" class="screen">
+      <div class="vote-container">
+        <div class="vote-header">
+          <div class="scales">⚖️</div>
+          <h2>Le Tribunal</h2>
+          <p>Le village doit choisir</p>
+        </div>
+
+        <div class="vote-timer">
+          <span id="voteTimer">--</span>
+        </div>
+
+        <div class="vote-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="voteFill"></div>
+          </div>
+          <div class="progress-text">
+            <span id="voteCount">0</span> / <span id="voteTotal">0</span> votes
+          </div>
+        </div>
+
+        <!-- Vote arena - shows who is being voted -->
+        <div class="vote-arena" id="voteArena">
+          <!-- Candidates with vote counts -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: EXECUTION ==================== -->
+    <div id="screenExecution" class="screen">
+      <div class="execution-container">
+        <h2 class="verdict-title">Le Verdict</h2>
+        
+        <div class="execution-stage">
+          <div class="gallows">
+            <div class="noose">⛓️</div>
+          </div>
+          
+          <div class="condemned-card" id="condemnedCard">
+            <img id="condemnedImg" src="/static/cards/verso.jpg" alt="">
+            <div class="condemned-info">
+              <div class="condemned-name" id="condemnedName">???</div>
+              <div class="condemned-role" id="condemnedRole">???</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="vote-tally" id="voteTally">
+          <!-- Vote breakdown -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN: GAME OVER ==================== -->
+    <div id="screenGameOver" class="screen">
+      <div class="gameover-container">
+        <div class="victory-banner" id="victoryBanner">
+          <div class="victory-icon" id="victoryIcon">🏆</div>
+          <h1 class="victory-title" id="victoryTitle">Victoire!</h1>
+          <p class="victory-team" id="victoryTeam">Les Villageois</p>
+        </div>
+
+        <div class="final-reveal">
+          <h3>Révélation finale</h3>
+          <div class="all-roles" id="allRoles">
+            <!-- All players with their roles revealed -->
+          </div>
+        </div>
+
+        <button id="resetBtn" class="btn-reset">
+          <span>🔄</span> Nouvelle Partie
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== GRAVEYARD (always visible) ==================== -->
+    <div class="graveyard" id="graveyard">
+      <div class="graveyard-header">
+        <span class="grave-icon">⚰️</span>
+        <span>Cimetière</span>
+        <span class="grave-count">(<span id="deadCount">0</span>)</span>
+      </div>
+      <div class="graveyard-tombs" id="graveyardTombs">
+        <!-- Dead players shown here -->
+      </div>
+    </div>
+
+    <!-- ==================== NARRATOR LOG ==================== -->
+    <div class="narrator-btn" id="narratorBtn">📜</div>
+    <div class="narrator-panel" id="narratorPanel">
+      <div class="narrator-header">
+        <span>📜 Chroniques du Village</span>
+        <button id="closeNarrator">✕</button>
+      </div>
+      <div class="narrator-scroll" id="narratorLog"></div>
+    </div>
+
+    <!-- ==================== CONNECTION STATUS ==================== -->
+    <div class="connection-status" id="connStatus">
+      <span class="status-dot"></span>
+      <span class="status-text">Connexion...</span>
+    </div>
+  </div>
+
+  <script src="/static/tv-game.js"></script>
+</body>
+
+</html>

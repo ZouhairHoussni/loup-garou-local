@@ -1,0 +1,62 @@
+/* TV screen layout (wide) */
+.tv-wrap{ width:min(1200px, 96vw); margin: 18px auto 22px; }
+.tv-header{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+}
+.tv-header .left{ display:flex; flex-direction:column; gap:8px; }
+.tv-header h1{ margin:0; font-size: 26px; letter-spacing:.02em; }
+.tv-pills{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.tv-pills .pill{ padding: 8px 12px; border-radius: 999px; }
+.tv-actions{ display:flex; gap:10px; align-items:center; }
+.tv-actions .btn{ width:auto; padding: 10px 14px; }
+.tv-grid{
+  margin-top: 14px;
+  display:grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 14px;
+}
+@media (max-width: 980px){
+  .tv-grid{ grid-template-columns: 1fr; }
+}
+.panel-title{ margin: 0 0 10px; font-size: 14px; letter-spacing:.06em; text-transform: uppercase; color: rgba(247,242,230,.72); }
+.list{ display:flex; flex-direction:column; gap:8px; }
+.listItem{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.listItem .name{ font-weight: 700; }
+.listItem .meta{ font-size: 12px; color: rgba(247,242,230,.72); }
+pre#log{
+  margin:0;
+  max-height: 320px;
+  overflow:auto;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(0,0,0,.2);
+  border: 1px solid rgba(255,255,255,.10);
+  white-space: pre-wrap;
+}
+.voteBox{ display:flex; flex-direction:column; gap:10px; }
+.voteRow{ display:flex; justify-content:space-between; gap:12px; }
+.voteRow .bar{
+  flex:1;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  overflow:hidden;
+}
+.voteRow .bar > div{
+  height: 100%;
+  width: 0%;
+  background: rgba(214,177,90,.55);
+}
+.voteRow .label{ width: 160px; font-weight: 650; }
+.voteRow .count{ width: 42px; text-align:right; font-variant-numeric: tabular-nums; }
+.footerRow{
+  margin-top: 14px;
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+}
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; }

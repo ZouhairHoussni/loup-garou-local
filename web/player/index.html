@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Loup-Garou</title>
+  <link rel="stylesheet" href="/static/game.css">
+</head>
+
+<body>
+  <div id="app" class="game-app">
+    <canvas id="fxCanvas"></canvas>
+
+    <!-- Connection status indicator -->
+    <div id="connStatus" class="conn-dot"></div>
+
+    <!-- SCREEN: Join -->
+    <div id="screenJoin" class="screen screen-join">
+      <div class="screen-content">
+        <div class="game-logo">🐺</div>
+        <h1>Loup-Garou</h1>
+        <p class="subtitle">Rejoins la partie</p>
+        <input type="text" id="nameInput" placeholder="Ton prénom" maxlength="24" autocomplete="off">
+        <button id="joinBtn" class="btn-primary">Entrer dans le village</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: Waiting (lobby) -->
+    <div id="screenWaiting" class="screen screen-waiting" style="display:none;">
+      <div class="screen-content">
+        <div class="waiting-icon">⏳</div>
+        <h2>En attente</h2>
+        <p>La partie va bientôt commencer…</p>
+        <div id="playerCount" class="player-count">0 joueurs</div>
+      </div>
+    </div>
+
+    <!-- SCREEN: Role Reveal -->
+    <div id="screenRole" class="screen screen-role" style="display:none;">
+      <div class="screen-content">
+        <p class="hint">Touche pour révéler ton rôle</p>
+        <div id="roleCard" class="role-card" tabindex="0">
+          <div class="role-card-inner">
+            <div class="role-card-back">
+              <img id="cardBackImg" src="/static/cards/verso.jpg" alt="?">
+              <span class="tap-hint">👆</span>
+            </div>
+            <div class="role-card-front">
+              <img id="cardFrontImg" src="/static/cards/villager.jpg" alt="Role">
+              <div id="roleName" class="role-name">—</div>
+            </div>
+          </div>
+        </div>
+        <p id="roleHint" class="role-hint"></p>
+      </div>
+    </div>
+
+    <!-- SCREEN: Night - Waiting -->
+    <div id="screenNightWait" class="screen screen-night" style="display:none;">
+      <div class="screen-content">
+        <div class="night-icon">🌙</div>
+        <h2>La nuit tombe</h2>
+        <p id="nightWaitMsg">Ferme les yeux et attends…</p>
+      </div>
+    </div>
+
+    <!-- SCREEN: Night - Action (pick targets) -->
+    <div id="screenNightAction" class="screen screen-night-action" style="display:none;">
+      <div class="screen-content">
+        <h2 id="actionTitle">Action</h2>
+        <p id="actionSubtitle" class="subtitle">Choisis une cible</p>
+        <div id="actionTimer" class="action-timer"></div>
+
+        <div id="targets" class="target-grid">
+          <!-- Targets inserted here -->
+        </div>
+
+        <button id="confirmActionBtn" class="btn-primary" style="display:none;">Confirmer</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: Day -->
+    <div id="screenDay" class="screen screen-day" style="display:none;">
+      <div class="screen-content">
+        <div class="day-icon">☀️</div>
+        <h2>Le jour se lève</h2>
+        <p id="dayMsg" class="subtitle">Discutez entre vous...</p>
+        <div id="dayTimer" class="day-timer"></div>
+      </div>
+    </div>
+
+    <!-- SCREEN: Vote -->
+    <div id="screenVote" class="screen screen-vote" style="display:none;">
+      <div class="screen-content">
+        <h2>⚖️ Vote du village</h2>
+        <p class="subtitle">Qui doit être éliminé ?</p>
+        <div id="voteTimer" class="vote-timer"></div>
+
+        <div id="voteTargets" class="target-grid">
+          <!-- Vote targets -->
+        </div>
+
+        <div id="voteStatus" class="vote-status"></div>
+      </div>
+    </div>
+
+    <!-- SCREEN: Result -->
+    <div id="screenResult" class="screen screen-result" style="display:none;">
+      <div class="screen-content">
+        <div class="result-icon">📣</div>
+        <h2>Résultat du vote</h2>
+        <div id="resultMsg" class="subtitle">—</div>
+
+        <button id="continueBtn" class="btn-primary">Continuer</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: Game Over -->
+    <div id="screenGameOver" class="screen screen-gameover" style="display:none;">
+      <div class="screen-content">
+        <div class="gameover-icon">🏆</div>
+        <h2>Fin de partie</h2>
+        <div id="winnerMsg" class="subtitle">—</div>
+
+        <button id="backToJoinBtn" class="btn-primary">Nouvelle partie</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: Dead -->
+    <div id="screenDead" class="screen screen-dead" style="display:none;">
+      <div class="screen-content">
+        <div class="dead-icon">💀</div>
+        <h2>Tu es mort</h2>
+        <p class="subtitle">Observe en silence…</p>
+      </div>
+    </div>
+
+    <!-- Floating role button (mini card) -->
+    <button id="roleBtn" class="role-btn" style="display:none;" aria-label="Voir mon rôle">
+      <img id="roleBtnImg" src="/static/cards/verso.jpg" alt="Role">
+    </button>
+
+    <!-- Hold-to-reveal overlay (centered role while holding) -->
+    <div id="rolePeek" class="role-peek" aria-hidden="true">
+      <div class="role-peek-card">
+        <img id="rolePeekImg" src="/static/cards/verso.jpg" alt="Mon rôle">
+      </div>
+    </div>
+
+    <!-- Modal for reveals -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <h3 id="modalTitle"></h3>
+        <div id="modalBody"></div>
+        <button id="modalClose" class="btn-secondary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/game.js"></script>
+</body>
+
+</html>

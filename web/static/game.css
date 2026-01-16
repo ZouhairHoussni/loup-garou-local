@@ -1,0 +1,587 @@
+/* Loup-Garou Game UI - Immersive Mobile-First Design */
+:root {
+  --bg-dark: #0a0908;
+  --bg-night: #0d1117;
+  --bg-day: #1a1512;
+  --surface: rgba(255,255,255,0.06);
+  --surface-hover: rgba(255,255,255,0.12);
+  --border: rgba(255,255,255,0.1);
+  --text: #f5f0e8;
+  --text-dim: rgba(245,240,232,0.6);
+  --accent: #d4a24c;
+  --danger: #c0392b;
+  --success: #27ae60;
+  --wolf: #8b0000;
+  --villager: #2c5f2d;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 16px;
+  --radius-lg: 24px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  background: var(--bg-dark);
+  color: var(--text);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.game-app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#fxCanvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+/* Connection indicator */
+.conn-dot {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e74c3c;
+  z-index: 100;
+  transition: background 0.3s;
+}
+.conn-dot.connected { background: #27ae60; }
+
+/* Screens */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.screen-content {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Join Screen */
+.screen-join { background: linear-gradient(180deg, #1a1512 0%, #0a0908 100%); }
+.game-logo { font-size: 80px; margin-bottom: 16px; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.5)); }
+.screen-join h1 { font-size: 36px; font-weight: 800; margin-bottom: 8px; letter-spacing: 2px; }
+.subtitle { color: var(--text-dim); margin-bottom: 32px; }
+
+input[type="text"] {
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 18px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input[type="text"]:focus { border-color: var(--accent); }
+input[type="text"]::placeholder { color: var(--text-dim); }
+
+.btn-primary, .btn-secondary {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #b8860b);
+  color: #1a1512;
+  margin-top: 16px;
+}
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  margin-top: 12px;
+}
+
+/* Waiting Screen */
+.screen-waiting { background: var(--bg-dark); }
+.waiting-icon { font-size: 64px; margin-bottom: 16px; animation: pulse 2s infinite; }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+.player-count {
+  margin-top: 24px;
+  padding: 12px 24px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Role Card */
+.screen-role { background: radial-gradient(ellipse at center, #1a1512 0%, #0a0908 100%); }
+.hint { color: var(--text-dim); margin-bottom: 24px; font-size: 14px; }
+
+.role-card {
+  width: 240px;
+  height: 340px;
+  margin: 0 auto;
+  perspective: 1000px;
+  cursor: pointer;
+}
+.role-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.role-card.flipped .role-card-inner { transform: rotateY(180deg); }
+
+.role-card-back, .role-card-front {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  backface-visibility: hidden;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  border: 2px solid rgba(255,255,255,0.1);
+}
+.role-card-back img, .role-card-front img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.role-card-front { transform: rotateY(180deg); }
+.tap-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 32px;
+  animation: bounce 1s infinite;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-10px); }
+}
+.role-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.9));
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+.role-hint {
+  margin-top: 24px;
+  color: var(--text-dim);
+  font-size: 14px;
+  min-height: 40px;
+}
+
+/* Night Screens */
+.screen-night, .screen-night-action {
+  background: linear-gradient(180deg, #0d1520 0%, #050810 100%);
+}
+.night-icon { font-size: 64px; margin-bottom: 16px; }
+
+/* Target Grid - Clickable Avatars */
+.target-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.target-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  background: var(--surface);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.target-card:hover { background: var(--surface-hover); }
+.target-card.selected {
+  border-color: var(--accent);
+  background: rgba(212, 162, 76, 0.15);
+  transform: scale(1.05);
+}
+.target-card.voted {
+  border-color: var(--success);
+  background: rgba(39, 174, 96, 0.15);
+}
+
+.target-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3a3a3a, #2a2a2a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  border: 2px solid var(--border);
+  overflow: hidden;
+}
+.target-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.target-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  word-break: break-word;
+}
+.target-card.is-wolf .target-avatar { border-color: var(--wolf); }
+
+/* Action Timer */
+.action-timer, .day-timer, .vote-timer {
+  font-size: 48px;
+  font-weight: 800;
+  margin: 16px 0;
+  font-variant-numeric: tabular-nums;
+}
+.action-timer.urgent, .vote-timer.urgent { color: var(--danger); animation: pulse 0.5s infinite; }
+
+.action-desc {
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+/* Day Screen */
+.screen-day { background: linear-gradient(180deg, #2c2416 0%, #1a1512 100%); }
+.day-icon { font-size: 64px; margin-bottom: 16px; }
+
+.death-announcement {
+  margin-top: 24px;
+  padding: 20px;
+  background: rgba(192, 57, 43, 0.2);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+}
+.death-announcement .victim-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.death-announcement .victim-role {
+  color: var(--text-dim);
+}
+
+/* Vote Screen */
+.screen-vote { background: linear-gradient(180deg, #1a1512 0%, #0a0908 100%); }
+.vote-confirm {
+  margin-top: 20px;
+  padding: 12px;
+  background: rgba(39, 174, 96, 0.2);
+  border-radius: var(--radius);
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* Result Screen */
+.screen-result { background: var(--bg-dark); }
+.eliminated-player {
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+}
+.eliminated-player .name {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.eliminated-player .role {
+  color: var(--text-dim);
+  font-size: 18px;
+}
+.eliminated-player img {
+  width: 120px;
+  height: 120px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  object-fit: cover;
+}
+
+/* Game Over */
+.screen-gameover { background: radial-gradient(ellipse at center, #1a1512 0%, #0a0908 100%); }
+.gameover-icon { font-size: 80px; margin-bottom: 16px; }
+.screen-gameover h2 { font-size: 32px; margin-bottom: 12px; }
+
+.final-roles {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.final-role-card {
+  padding: 12px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  text-align: center;
+}
+.final-role-card .name { font-weight: 600; font-size: 14px; }
+.final-role-card .role { font-size: 12px; color: var(--text-dim); }
+.final-role-card.is-wolf { border-left: 3px solid var(--wolf); }
+.final-role-card.is-villager { border-left: 3px solid var(--villager); }
+
+/* Dead Screen */
+.screen-dead { background: linear-gradient(180deg, #1a1512 0%, #0a0908 100%); }
+.dead-icon { font-size: 80px; margin-bottom: 16px; opacity: 0.6; }
+
+/* Floating Role Button */
+.role-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 14px;
+  background: none;
+  cursor: pointer;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+.role-btn:active { transform: scale(0.95); }
+.role-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Hold-to-reveal centered role (only while holding) */
+.role-peek{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.55);
+  z-index: 180;
+}
+.role-peek.open{ display: flex; }
+
+.role-peek-card{
+  width: min(260px, 70vw);
+  height: min(260px, 70vw);
+  border-radius: 22px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.14);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.65);
+  background: rgba(0,0,0,0.2);
+}
+.role-peek-card img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 200;
+}
+.modal.open { display: flex; }
+.modal-content {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px;
+  background: #1a1512;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  text-align: center;
+  animation: modalIn 0.3s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.modal-content h3 { margin-bottom: 16px; font-size: 20px; }
+.modal-content img {
+  width: 160px;
+  height: 160px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  object-fit: cover;
+}
+#modalClose { margin-top: 16px; }
+
+/* Wolves: show team */
+.wolves-team {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(139, 0, 0, 0.2);
+  border-radius: var(--radius);
+  border: 1px solid var(--wolf);
+}
+.wolves-team-title {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.wolves-team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.wolf-badge {
+  padding: 6px 12px;
+  background: var(--wolf);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Cupid: two selections */
+.cupid-selections {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.cupid-slot {
+  width: 80px;
+  height: 100px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.cupid-slot.filled {
+  border-style: solid;
+  border-color: var(--accent);
+  background: rgba(212, 162, 76, 0.1);
+}
+.cupid-slot .slot-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+.cupid-slot .slot-name {
+  font-size: 11px;
+  text-align: center;
+  word-break: break-word;
+}
+
+/* Witch potions */
+.witch-potions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.potion-btn {
+  flex: 1;
+  max-width: 140px;
+  padding: 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.potion-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.potion-btn.selected {
+  border-color: var(--accent);
+  background: rgba(212, 162, 76, 0.15);
+}
+.potion-btn .potion-icon { font-size: 32px; margin-bottom: 8px; }
+.potion-btn .potion-label { font-size: 12px; color: var(--text-dim); }
+
+.witch-victim {
+  padding: 12px;
+  background: rgba(192, 57, 43, 0.2);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+.witch-victim-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+.witch-victim-name { font-size: 18px; font-weight: 700; }
+
+/* Responsive */
+@media (max-width: 360px) {
+  .target-grid { grid-template-columns: repeat(2, 1fr); }
+  .role-card { width: 200px; height: 280px; }
+}
+
+@media (min-width: 500px) {
+  .target-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
