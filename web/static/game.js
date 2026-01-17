@@ -405,11 +405,20 @@ function init() {
         
       case 'LOVER_ASSIGNED':
         state.lover_name = msg.lover_name;
-        showModal('💕 Cupidon', `
+        state.lover_id = msg.lover_id;
+        
+        // Show the lover heart icon
+        const loverHeart = $('loverHeart');
+        if (loverHeart) {
+          loverHeart.style.display = 'flex';
+        }
+        
+        showModal('💕 Cupidon a frappé!', `
           <div style="font-size:48px;">💕</div>
-          <div style="margin-top:12px;">Tu es amoureux/amoureuse de</div>
-          <div style="font-size:24px;font-weight:bold;color:#d4a24c;">${escapeHtml(msg.lover_name)}</div>
-          <div style="margin-top:12px;color:#aaa;font-size:14px;">Si l'un de vous meurt, l'autre meurt aussi de chagrin.</div>
+          <div style="margin-top:12px;color:#f5f0e8;">Tu es amoureux/amoureuse de</div>
+          <div style="font-size:24px;font-weight:bold;color:#ff69b4;margin:12px 0;">${escapeHtml(msg.lover_name)}</div>
+          <div style="color:#aaa;font-size:13px;">Si l'un de vous meurt, l'autre meurt aussi de chagrin.</div>
+          <div style="margin-top:16px;color:#888;font-size:11px;">💕 Clique sur le cœur en bas à gauche pour voir ton amoureux/se</div>
         `);
         break;
         
@@ -889,6 +898,11 @@ function init() {
       const isWolf = state.wolves_team?.some(w => w.id === p.id);
       if (isWolf) card.classList.add('is-wolf');
       
+      // Check if this is the lover (pink border)
+      if (state.lover_id && p.id === state.lover_id) {
+        card.classList.add('is-lover');
+      }
+      
       // Show vote count if any
       const votes = voteCounts[p.id] || 0;
       const voteBadge = votes > 0 ? `<div style="position:absolute;top:-8px;right:-8px;background:#d4a24c;color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;">${votes}</div>` : '';
@@ -967,6 +981,12 @@ function init() {
       const card = document.createElement('div');
       card.className = 'target-card';
       card.dataset.id = p.id;
+      
+      // Check if this is the lover (pink border)
+      if (state.lover_id && p.id === state.lover_id) {
+        card.classList.add('is-lover');
+      }
+      
       card.innerHTML = `
         <div class="target-avatar">${(p.name || '?')[0].toUpperCase()}</div>
         <div class="target-name">${escapeHtml(p.name)}</div>
@@ -1357,6 +1377,24 @@ function init() {
   if (modal) {
     modal.addEventListener('click', function(e) {
       if (e.target === modal) closeModal();
+    });
+  }
+  
+  // Lover heart - click to reveal lover name
+  const loverHeartBtn = $('loverHeart');
+  const loverReveal = $('loverReveal');
+  const loverRevealName = $('loverRevealName');
+  
+  if (loverHeartBtn && loverReveal) {
+    loverHeartBtn.addEventListener('click', () => {
+      if (state.lover_name && loverRevealName) {
+        loverRevealName.textContent = state.lover_name;
+        loverReveal.classList.add('visible');
+      }
+    });
+    
+    loverReveal.addEventListener('click', () => {
+      loverReveal.classList.remove('visible');
     });
   }
   

@@ -426,6 +426,7 @@ body {
 }
 
 .target-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -623,13 +624,13 @@ body {
 }
 
 /* =====================================================
-   MODAL
+   MODAL - Stays until OK clicked
    ===================================================== */
 
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   display: none;
   align-items: center;
   justify-content: center;
@@ -637,29 +638,132 @@ body {
   padding: 20px;
 }
 
-.modal.active {
+.modal.active,
+.modal.open {
   display: flex;
 }
 
 .modal-content {
-  background: var(--surface);
+  background: linear-gradient(145deg, rgba(35, 28, 22, 0.98) 0%, rgba(25, 20, 15, 0.98) 100%);
   border: 2px solid var(--gold-dim);
   border-radius: 16px;
   padding: 24px;
   max-width: 320px;
   text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
 }
 
 #modalTitle {
   font-size: 20px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: var(--gold);
 }
 
 #modalBody {
   font-size: 14px;
   margin-bottom: 20px;
-  color: var(--text-dim);
+  color: var(--text);
+}
+
+#modalClose {
+  padding: 12px 32px;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8860b 100%);
+  border: none;
+  border-radius: 10px;
+  color: #1a1512;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+#modalClose:hover {
+  transform: scale(1.05);
+}
+
+/* =====================================================
+   LOVER HEART ICON (Stealth mode)
+   ===================================================== */
+
+.lover-heart {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  left: 20px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 105, 180, 0.3);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 50;
+  opacity: 0.4;
+  transition: all 0.3s;
+}
+
+.lover-heart:hover {
+  opacity: 0.7;
+}
+
+.lover-heart:active {
+  opacity: 1;
+}
+
+/* Lover name reveal overlay */
+.lover-reveal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 250;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.lover-reveal.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.lover-reveal-content {
+  text-align: center;
+  padding: 24px 40px;
+  background: rgba(20, 15, 10, 0.7);
+  border: 2px solid rgba(255, 105, 180, 0.4);
+  border-radius: 16px;
+}
+
+.lover-reveal-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.lover-reveal-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ff69b4;
+  text-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+}
+
+/* Lover border on targets */
+.target-card.is-lover {
+  border-color: rgba(255, 105, 180, 0.6) !important;
+  box-shadow: 0 0 15px rgba(255, 105, 180, 0.3);
+}
+
+.target-card.is-lover::before {
+  content: '💕';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 14px;
+  opacity: 0.7;
 }
 
 /* =====================================================

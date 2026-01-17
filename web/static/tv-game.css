@@ -326,7 +326,9 @@ body {
   letter-spacing: 3px;
   background: linear-gradient(180deg, var(--gold) 0%, #8b6914 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .lobby-title p {
