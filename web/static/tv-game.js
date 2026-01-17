@@ -5,6 +5,7 @@
  * - Game configuration (timers, roles)
  * - Medieval theme with animations
  * - Enhanced vote visualization
+ * - Audio narrator system with dramatic sequences
  */
 
 document.addEventListener('DOMContentLoaded', init);
@@ -24,6 +25,461 @@ function init() {
   const WS_URL = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${host}${portPart}`;
   
   console.log('[TV] API:', API_URL);
+  
+  // ============ AUDIO NARRATOR SYSTEM ============
+  const AudioNarrator = {
+    enabled: true,
+    volume: 0.8,
+    queue: [],
+    isPlaying: false,
+    currentAudio: null,
+    
+    // Base path for audio files
+    basePath: '/static/audio/',
+    
+    // All narrator audio files mapped to their paths
+    files: {
+      // Lobby
+      lobby_new_traveler: 'lobby_new_traveler.mp3',
+      lobby_joined_village: 'lobby_joined_village.mp3',
+      
+      // Game start
+      start_listen: 'start_listen.mp3',
+      start_roles_sealed: 'start_roles_sealed.mp3',
+      
+      // Night falls
+      night_lanterns: 'night_lanterns.mp3',
+      night_village_sleeps: 'night_village_sleeps.mp3',
+      night_returns: 'night_returns.mp3',
+      night_hearts_silent: 'night_hearts_silent.mp3',
+      night_fear_walks: 'night_fear_walks.mp3',
+      
+      // Cupid
+      cupid_wake: 'cupid_wake.mp3',
+      cupid_choose: 'cupid_choose.mp3',
+      cupid_close: 'cupid_close.mp3',
+      cupid_spell_cast: 'cupid_spell_cast.mp3',
+      
+      // Werewolves
+      wolves_wake: 'wolves_wake.mp3',
+      wolves_choose: 'wolves_choose.mp3',
+      wolves_unanimous: 'wolves_unanimous.mp3',
+      wolves_no_choice: 'wolves_no_choice.mp3',
+      wolves_hunger_decides: 'wolves_hunger_decides.mp3',
+      wolves_close_1: 'wolves_close_1.mp3',
+      wolves_close_2: 'wolves_close_2.mp3',
+      wolves_close_3: 'wolves_close_3.mp3',
+      
+      // Seer
+      seer_wake: 'seer_wake.mp3',
+      seer_pierce: 'seer_pierce.mp3',
+      seer_choose: 'seer_choose.mp3',
+      seer_close: 'seer_close.mp3',
+      seer_secret: 'seer_secret.mp3',
+      
+      // Witch
+      witch_wake: 'witch_wake.mp3',
+      witch_potions: 'witch_potions.mp3',
+      witch_save: 'witch_save.mp3',
+      witch_kill: 'witch_kill.mp3',
+      witch_close: 'witch_close.mp3',
+      witch_magic_sleeps: 'witch_magic_sleeps.mp3',
+      
+      // Dawn
+      dawn_rises: 'dawn_rises.mp3',
+      dawn_no_death_1: 'dawn_no_death_1.mp3',
+      dawn_no_death_2: 'dawn_no_death_2.mp3',
+      dawn_voice_missing: 'dawn_voice_missing.mp3',
+      dawn_died_tonight: 'dawn_died_tonight.mp3',
+      dawn_role_was: 'dawn_role_was.mp3',
+      
+      // Lover death
+      lover_grief: 'lover_grief.mp3',
+      lover_in_love_with: 'lover_in_love_with.mp3',
+      lover_dies_grief: 'lover_dies_grief.mp3',
+      
+      // Day
+      day_new: 'day_new.mp3',
+      day_speak: 'day_speak.mp3',
+      day_accuse: 'day_accuse.mp3',
+      day_choose_wisely: 'day_choose_wisely.mp3',
+      
+      // Vote
+      vote_begins: 'vote_begins.mp3',
+      vote_time_limited: 'vote_time_limited.mp3',
+      vote_closed: 'vote_closed.mp3',
+      vote_counting: 'vote_counting.mp3',
+      vote_one_by_one: 'vote_one_by_one.mp3',
+      
+      // Execution
+      exec_decided: 'exec_decided.mp3',
+      exec_eliminated: 'exec_eliminated.mp3',
+      exec_role_was: 'exec_role_was.mp3',
+      exec_none_today: 'exec_none_today.mp3',
+      exec_nobody: 'exec_nobody.mp3',
+      exec_doubt: 'exec_doubt.mp3',
+      
+      // Game over
+      end_game: 'end_game.mp3',
+      end_day_triumphs: 'end_day_triumphs.mp3',
+      end_village_wins: 'end_village_wins.mp3',
+      end_night_devours: 'end_night_devours.mp3',
+      end_wolves_win: 'end_wolves_win.mp3',
+      end_hearts_won: 'end_hearts_won.mp3',
+      end_lovers_win: 'end_lovers_win.mp3'
+    },
+    
+    // Role name audio files
+    roleFiles: {
+      villager: 'roles/villageois.mp3',
+      werewolf: 'roles/loup_garou.mp3',
+      seer: 'roles/voyante.mp3',
+      witch: 'roles/sorciere.mp3',
+      cupid: 'roles/cupidon.mp3',
+      hunter: 'roles/chasseur.mp3'
+    },
+    
+    // Get path for a sound file
+    getPath(key) {
+      if (this.files[key]) {
+        return this.basePath + this.files[key];
+      }
+      return null;
+    },
+    
+    // Get path for a player name
+    getNamePath(name) {
+      // Normalize: lowercase, remove accents, replace spaces/hyphens with underscore
+      const normalized = name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\s-]+/g, '_');
+      return this.basePath + 'names/' + normalized + '.mp3';
+    },
+    
+    // Get path for a role
+    getRolePath(role) {
+      if (this.roleFiles[role]) {
+        return this.basePath + this.roleFiles[role];
+      }
+      return null;
+    },
+    
+    // Play a single audio file
+    async playFile(path, options = {}) {
+      if (!this.enabled || !path) return null;
+      
+      return new Promise((resolve) => {
+        try {
+          const audio = new Audio(path);
+          audio.volume = options.volume ?? this.volume;
+          
+          audio.onended = () => resolve(true);
+          audio.onerror = () => {
+            console.warn('[Audio] Failed to load:', path);
+            resolve(false);
+          };
+          
+          this.currentAudio = audio;
+          audio.play().catch(e => {
+            console.log('[Audio] Playback failed:', e.message);
+            resolve(false);
+          });
+          
+          console.log('[Audio] Playing:', path);
+        } catch (e) {
+          console.warn('[Audio] Error:', e);
+          resolve(false);
+        }
+      });
+    },
+    
+    // Play a sequence of audio files with optional delays
+    async playSequence(items) {
+      if (!this.enabled) return;
+      
+      this.stopAll();
+      this.isPlaying = true;
+      
+      for (const item of items) {
+        if (!this.enabled || !this.isPlaying) break;
+        
+        if (typeof item === 'string') {
+          // It's a sound key
+          const path = this.getPath(item);
+          if (path) await this.playFile(path);
+        } else if (item.name) {
+          // It's a player name
+          await this.playFile(this.getNamePath(item.name));
+        } else if (item.role) {
+          // It's a role
+          const path = this.getRolePath(item.role);
+          if (path) await this.playFile(path);
+        } else if (item.delay) {
+          // It's a delay
+          await new Promise(r => setTimeout(r, item.delay));
+        } else if (item.path) {
+          // It's a direct path
+          await this.playFile(item.path);
+        }
+      }
+      
+      this.isPlaying = false;
+    },
+    
+    // Stop all audio
+    stopAll() {
+      this.isPlaying = false;
+      if (this.currentAudio) {
+        this.currentAudio.pause();
+        this.currentAudio = null;
+      }
+    },
+    
+    // Toggle audio on/off
+    toggle() {
+      this.enabled = !this.enabled;
+      if (!this.enabled) this.stopAll();
+      console.log('[Audio] Enabled:', this.enabled);
+      return this.enabled;
+    },
+    
+    // ========== NARRATOR SEQUENCES ==========
+    
+    // Player joins lobby
+    playerJoined(name) {
+      this.playSequence([
+        'lobby_new_traveler',
+        { name },
+        'lobby_joined_village'
+      ]);
+    },
+    
+    // Game starts
+    gameStart() {
+      this.playSequence([
+        'start_listen',
+        { delay: 500 },
+        'start_roles_sealed'
+      ]);
+    },
+    
+    // Night falls (first night or return)
+    nightFalls(isFirstNight = false) {
+      if (isFirstNight) {
+        this.playSequence([
+          'night_lanterns',
+          { delay: 300 },
+          'night_village_sleeps'
+        ]);
+      } else {
+        this.playSequence([
+          'night_returns',
+          { delay: 300 },
+          'night_hearts_silent',
+          'night_fear_walks'
+        ]);
+      }
+    },
+    
+    // Cupid phase
+    cupidWake() {
+      this.playSequence([
+        'cupid_wake',
+        { delay: 500 },
+        'cupid_choose'
+      ]);
+    },
+    
+    cupidClose() {
+      this.playSequence([
+        'cupid_close',
+        'cupid_spell_cast'
+      ]);
+    },
+    
+    // Werewolves phase
+    wolvesWake() {
+      this.playSequence([
+        'wolves_wake',
+        { delay: 500 },
+        'wolves_choose'
+      ]);
+    },
+    
+    wolvesUnanimous() {
+      this.playSequence(['wolves_unanimous']);
+    },
+    
+    wolvesNoChoice() {
+      this.playSequence([
+        'wolves_no_choice',
+        { delay: 300 },
+        'wolves_hunger_decides'
+      ]);
+    },
+    
+    wolvesClose() {
+      this.playSequence([
+        'wolves_close_1',
+        'wolves_close_2',
+        'wolves_close_3'
+      ]);
+    },
+    
+    // Seer phase
+    seerWake() {
+      this.playSequence([
+        'seer_wake',
+        { delay: 300 },
+        'seer_pierce',
+        'seer_choose'
+      ]);
+    },
+    
+    seerClose() {
+      this.playSequence([
+        'seer_close',
+        'seer_secret'
+      ]);
+    },
+    
+    // Witch phase
+    witchWake() {
+      this.playSequence([
+        'witch_wake',
+        { delay: 300 },
+        'witch_potions',
+        { delay: 200 },
+        'witch_save',
+        'witch_kill'
+      ]);
+    },
+    
+    witchClose() {
+      this.playSequence([
+        'witch_close',
+        'witch_magic_sleeps'
+      ]);
+    },
+    
+    // Dawn - no deaths
+    dawnNoDeath() {
+      this.playSequence([
+        'dawn_rises',
+        { delay: 500 },
+        'dawn_no_death_1',
+        'dawn_no_death_2'
+      ]);
+    },
+    
+    // Dawn - death announcement
+    dawnDeath(name, role) {
+      this.playSequence([
+        'dawn_rises',
+        { delay: 500 },
+        'dawn_voice_missing',
+        { delay: 300 },
+        { name },
+        'dawn_died_tonight',
+        { delay: 500 },
+        'dawn_role_was',
+        { role }
+      ]);
+    },
+    
+    // Lover dies of grief
+    loverDiesOfGrief(loverName, deceasedName) {
+      this.playSequence([
+        'lover_grief',
+        { name: loverName },
+        'lover_in_love_with',
+        { name: deceasedName },
+        'lover_dies_grief'
+      ]);
+    },
+    
+    // Day discussion
+    dayStart() {
+      this.playSequence([
+        'day_new',
+        { delay: 300 },
+        'day_speak',
+        'day_accuse',
+        'day_choose_wisely'
+      ]);
+    },
+    
+    // Vote phase
+    voteStart() {
+      this.playSequence([
+        'vote_begins',
+        'vote_time_limited'
+      ]);
+    },
+    
+    voteClosed() {
+      this.playSequence([
+        'vote_closed',
+        { delay: 300 },
+        'vote_counting',
+        'vote_one_by_one'
+      ]);
+    },
+    
+    // Execution
+    execution(name, role) {
+      this.playSequence([
+        'exec_decided',
+        { delay: 500 },
+        { name },
+        'exec_eliminated',
+        { delay: 500 },
+        'exec_role_was',
+        { role }
+      ]);
+    },
+    
+    noExecution() {
+      this.playSequence([
+        'exec_none_today',
+        'exec_nobody',
+        'exec_doubt'
+      ]);
+    },
+    
+    // Game over
+    villageWins() {
+      this.playSequence([
+        'end_game',
+        { delay: 500 },
+        'end_day_triumphs',
+        'end_village_wins'
+      ]);
+    },
+    
+    wolvesWin() {
+      this.playSequence([
+        'end_game',
+        { delay: 500 },
+        'end_night_devours',
+        'end_wolves_win'
+      ]);
+    },
+    
+    loversWin() {
+      this.playSequence([
+        'end_game',
+        { delay: 500 },
+        'end_hearts_won',
+        'end_lovers_win'
+      ]);
+    }
+  };
+  
+  // Make audio accessible globally for debugging
+  window.AudioNarrator = AudioNarrator;
   
   // Store the real IP for QR code (will be fetched from server)
   let realIP = null;
@@ -263,12 +719,18 @@ function init() {
     
     // Phase-specific updates
     if (state.phase === 'LOBBY') {
-      if (phaseChanged) showScreen('screenLobby');
+      if (phaseChanged) {
+        showScreen('screenLobby');
+        AudioNarrator.stopAll();
+      }
       updateLobby();
     } else if (state.phase === 'NIGHT') {
       if (phaseChanged) {
         showScreen('screenNight');
         fx?.setMode('night');
+        // Play night narration
+        const isFirstNight = state.night_count <= 1;
+        AudioNarrator.nightFalls(isFirstNight);
       }
       updateNight();
     } else if (state.phase === 'DAY') {
@@ -280,7 +742,11 @@ function init() {
           showScreen('screenDawn');
           $('deathTheater').style.display = 'none';
           $('noDeath').style.display = 'block';
-          setTimeout(() => showScreen('screenDay'), 3000);
+          AudioNarrator.dawnNoDeath();
+          setTimeout(() => {
+            showScreen('screenDay');
+            AudioNarrator.dayStart();
+          }, 4000);
         }
         fx?.setMode('day');
       }
@@ -289,6 +755,7 @@ function init() {
       if (phaseChanged) {
         showScreen('screenVote');
         buildVoteArena();
+        AudioNarrator.voteStart();
       }
       updateVote();
     } else if (state.phase === 'GAME_OVER') {
@@ -438,12 +905,22 @@ function init() {
     if (deathQueue.length === 0) {
       if (theater) theater.style.display = 'none';
       if (noDeath) noDeath.style.display = 'block';
-      setTimeout(() => showScreen('screenDay'), 3000);
+      AudioNarrator.dawnNoDeath();
+      setTimeout(() => {
+        showScreen('screenDay');
+        AudioNarrator.dayStart();
+      }, 4000);
       return;
     }
     
     if (theater) theater.style.display = 'block';
     if (noDeath) noDeath.style.display = 'none';
+    
+    // Narrate first death
+    const firstVictim = deathQueue[0];
+    if (firstVictim) {
+      AudioNarrator.dawnDeath(firstVictim.name, firstVictim.role);
+    }
     
     // Build all death cards and show them one by one with animation
     if (deathsRow) {
@@ -478,17 +955,24 @@ function init() {
             card.style.opacity = '1';
             card.style.transform = 'scale(1)';
             fx?.burst({ kind: 'ember', count: 15 });
+            
+            // Narrate lover death if applicable
+            if (isLover && index > 0) {
+              const previousVictim = deathQueue[index - 1];
+              AudioNarrator.loverDiesOfGrief(victim.name, previousVictim.name);
+            }
           }
-        }, 500 + index * 1200); // Stagger by 1.2s each
+        }, 500 + index * 3000); // More time for narration
       });
     }
     
     // Move to day after all deaths shown
-    const totalDuration = 500 + deathQueue.length * 1200 + 2500;
+    const totalDuration = 500 + deathQueue.length * 3500 + 2000;
     setTimeout(() => {
       deathQueue = [];
       deathIndex = 0;
       showScreen('screenDay');
+      AudioNarrator.dayStart();
     }, totalDuration);
   }
   
@@ -572,15 +1056,27 @@ function init() {
     const role = $('condemnedRole');
     const tally = $('voteTally');
     
+    // First narrate vote closed
+    AudioNarrator.voteClosed();
+    
     if (data.eliminated) {
       if (img) img.src = getRoleImage(data.eliminated.role);
       if (name) name.textContent = data.eliminated.name;
       if (role) role.textContent = data.eliminated.role_fr || getRoleName(data.eliminated.role);
       
+      // Narrate execution after vote count
+      setTimeout(() => {
+        AudioNarrator.execution(data.eliminated.name, data.eliminated.role);
+      }, 3000);
+      
       fx?.burst({ kind: 'ember', count: 30 });
     } else {
       if (name) name.textContent = 'Personne';
       if (role) role.textContent = 'Pas d\'élimination';
+      
+      setTimeout(() => {
+        AudioNarrator.noExecution();
+      }, 3000);
     }
     
     // Show vote breakdown
@@ -596,6 +1092,7 @@ function init() {
   // ============ GAME OVER ============
   function showGameOver() {
     showScreen('screenGameOver');
+    AudioNarrator.stopAll();
     
     const banner = $('victoryBanner');
     const icon = $('victoryIcon');
@@ -608,16 +1105,25 @@ function init() {
       if (icon) icon.textContent = '🐺';
       if (title) title.textContent = 'Les Loups Triomphent!';
       if (team) team.textContent = 'Le village a été dévoré...';
+      AudioNarrator.wolvesWin();
     } else if (state.winner === 'villagers') {
       if (banner) banner.classList.remove('wolves');
       if (icon) icon.textContent = '🏆';
       if (title) title.textContent = 'Le Village Triomphe!';
       if (team) team.textContent = 'Tous les loups ont été éliminés!';
+      AudioNarrator.villageWins();
+    } else if (state.winner === 'lovers') {
+      if (banner) banner.classList.remove('wolves');
+      if (icon) icon.textContent = '💕';
+      if (title) title.textContent = 'L\'Amour Triomphe!';
+      if (team) team.textContent = 'Les amoureux ont survécu ensemble!';
+      AudioNarrator.loversWin();
     } else {
       if (banner) banner.classList.remove('wolves');
       if (icon) icon.textContent = '💀';
       if (title) title.textContent = 'Personne ne Survit';
       if (team) team.textContent = 'Tout le monde est mort...';
+      AudioNarrator.wolvesWin();
     }
     
     // Reveal all roles - show actual role images with staggered animation
@@ -863,6 +1369,9 @@ function init() {
           alert('Erreur: ' + (data.error || 'Impossible de démarrer'));
           if (hintEl) hintEl.textContent = '▶ COMMENCER';
           playerCountBtn.style.pointerEvents = '';
+        } else {
+          // Play game start narration
+          AudioNarrator.gameStart();
         }
       } catch (e) {
         console.error('[TV] Start error:', e);
@@ -907,6 +1416,16 @@ function init() {
       } catch (e) {
         console.error('[TV] Reset error:', e);
       }
+    });
+  }
+  
+  // Audio toggle button
+  const audioBtn = $('audioBtn');
+  if (audioBtn) {
+    audioBtn.addEventListener('click', () => {
+      const enabled = AudioNarrator.toggle();
+      audioBtn.textContent = enabled ? '🔊' : '🔇';
+      audioBtn.classList.toggle('muted', !enabled);
     });
   }
   
