@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import random
+import socket
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -13,6 +14,20 @@ from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
+
+
+def get_local_ip() -> str:
+    """Get the local IP address of this machine."""
+    try:
+        # Create a socket and connect to an external address
+        # This doesn't actually send data, just determines the local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
 
 
 class Role(str, Enum):
@@ -321,6 +336,29 @@ class Game:
             self.players = {}
             self._runner_task = None
         await self._broadcast_public({"type": "RESET"})
+
+    async def replay(self) -> None:
+        """Reset the game state but keep the same players, redistribute roles."""
+        async with self._lock:
+            if len(self.players) < 5:
+                raise ValueError("Need at least 5 players to replay")
+            
+            # Reset all players to alive with no role
+            for p in self.players.values():
+                p.alive = True
+                p.role = None
+                p.lover_id = None
+            
+            # Reset game state but keep players
+            self.state = GameState()
+            self._runner_task = None
+        
+        await self._narrate("🔄 Nouvelle partie avec les mêmes joueurs!")
+        await self._broadcast_public({"type": "REPLAY"})
+        await self._sync_all()
+        
+        # Auto-start the new game
+        await self.start()
 
     async def configure(self, cfg: Dict[str, Any]) -> None:
         async with self._lock:
@@ -933,6 +971,25 @@ async def api_vote(payload: Dict[str, Any]):
         return {"ok": False, "error": "Missing voter_id or target_id"}
     await GAME.cast_vote(voter_id, target_id)
     return {"ok": True}
+
+
+@app.post("/api/replay")
+async def api_replay():
+    """Replay with same players but new randomly distributed roles."""
+    try:
+        await GAME.replay()
+        return {"ok": True}
+    except ValueError as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.get("/api/server-info")
+async def api_server_info():
+    """Return server info including local IP address."""
+    return {
+        "ip": get_local_ip(),
+        "port": 8000
+    }
 
 
 @app.post("/api/ready")

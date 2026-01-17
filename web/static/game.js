@@ -392,10 +392,14 @@ function init() {
         break;
         
       case 'SEER_RESULT':
-        showModal('Vision', `
-          <img src="${getRoleImage(msg.role)}" style="width:120px;height:120px;border-radius:12px;">
-          <div style="font-size:20px;font-weight:bold;margin-top:12px;">${escapeHtml(msg.target_name)}</div>
-          <div style="color:#aaa;">${msg.role_fr || getRoleName(msg.role)}</div>
+        showModal('🔮 Vision', `
+          <div style="text-align:center;">
+            <div style="font-size:18px;font-weight:bold;margin-bottom:12px;color:#d4a24c;">${escapeHtml(msg.target_name)}</div>
+            <div style="width:140px;height:140px;margin:0 auto 12px;border-radius:12px;overflow:hidden;border:3px solid #d4a24c;box-shadow:0 0 30px rgba(212,162,76,0.4);">
+              <img src="${getRoleImage(msg.role)}" style="width:100%;height:100%;object-fit:cover;display:block;">
+            </div>
+            <div style="font-size:16px;color:#f5f0e8;">${msg.role_fr || getRoleName(msg.role)}</div>
+          </div>
         `);
         break;
         
@@ -1269,6 +1273,8 @@ function init() {
     // Always show verso on the button
     if (roleBtnImg) roleBtnImg.src = '/static/cards/verso.jpg';
     
+    const rolePeekName = $('rolePeekName');
+    
     function openPeek() {
       console.log('[LG] openPeek called, role:', state.me?.role);
       if (!state.me?.role) {
@@ -1280,6 +1286,11 @@ function init() {
       const roleImg = getRoleImage(state.me.role);
       console.log('[LG] Showing role image:', roleImg);
       rolePeekImg.src = roleImg;
+      
+      // Show role name
+      if (rolePeekName) {
+        rolePeekName.textContent = getRoleName(state.me.role);
+      }
       
       // Show the overlay
       rolePeek.classList.add('open');
@@ -1293,6 +1304,7 @@ function init() {
       rolePeek.classList.remove('open');
       rolePeek.setAttribute('aria-hidden', 'true');
       rolePeekImg.src = '/static/cards/verso.jpg';
+      if (rolePeekName) rolePeekName.textContent = '';
     }
     
     // Desktop: show while holding mouse button

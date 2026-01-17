@@ -25,6 +25,26 @@ function init() {
   
   console.log('[TV] API:', API_URL);
   
+  // Store the real IP for QR code (will be fetched from server)
+  let realIP = null;
+  
+  // Fetch real IP from server
+  async function fetchRealIP() {
+    try {
+      const res = await fetch(API_URL + '/api/server-info');
+      const data = await res.json();
+      if (data.ip) {
+        realIP = data.ip;
+        console.log('[TV] Server IP:', realIP);
+      }
+    } catch (e) {
+      console.warn('[TV] Could not fetch server IP, using hostname');
+    }
+  }
+  
+  // Call on init
+  fetchRealIP();
+  
   // Game state
   let state = {
     phase: 'LOBBY',
@@ -339,34 +359,43 @@ function init() {
       }).join('');
     }
     
-    // Join URL and QR Code
+    // Join URL and QR Code - use real IP if available
     const joinUrl = $('joinUrl');
     const qrCanvas = $('qrCanvas');
-    const playerUrl = `${window.location.protocol}//${host}${portPart}/player/`;
+    
+    // Use real IP for QR code, fallback to current host
+    const qrHost = realIP || host;
+    const playerUrl = `http://${qrHost}${portPart}/player/`;
     
     if (joinUrl) {
       joinUrl.textContent = playerUrl;
     }
     
-    // Generate QR code (only once)
-    if (qrCanvas && !qrCanvas.dataset.generated) {
+    // Generate QR code (only once, or regenerate if IP changed)
+    if (qrCanvas && (!qrCanvas.dataset.generated || qrCanvas.dataset.ip !== qrHost)) {
       qrCanvas.dataset.generated = 'true';
+      qrCanvas.dataset.ip = qrHost;
       generateQRCode(qrCanvas, playerUrl);
     }
   }
   
-  // QR Code generation with medieval colors
+  // QR Code generation with medieval parchment style
   function generateQRCode(canvas, url) {
     try {
       if (typeof QRCode !== 'undefined') {
+        // Clear any existing QR code
+        const parent = canvas.parentElement;
+        const existingImg = parent.querySelector('img');
+        if (existingImg) existingImg.remove();
+        
         canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
         
-        new QRCode(canvas.parentElement, {
+        new QRCode(parent, {
           text: url,
-          width: 76,
-          height: 76,
-          colorDark: "#d4a24c",
-          colorLight: "#1a1512",
+          width: 80,
+          height: 80,
+          colorDark: "#2a1f14",   // Dark brown
+          colorLight: "#f0e0c8",  // Parchment
           correctLevel: QRCode.CorrectLevel.M
         });
         
@@ -843,10 +872,35 @@ function init() {
     });
   }
   
+  // Replay button - same players, new roles
+  const replayBtn = $('replayBtn');
+  if (replayBtn) {
+    replayBtn.addEventListener('click', async () => {
+      replayBtn.disabled = true;
+      replayBtn.textContent = '⏳ Redistribution des rôles...';
+      
+      try {
+        const res = await fetch(API_URL + '/api/replay', { method: 'POST' });
+        const data = await res.json();
+        
+        if (!data.ok) {
+          alert('Erreur: ' + (data.error || 'Impossible de rejouer'));
+          replayBtn.disabled = false;
+          replayBtn.innerHTML = '🔄 Rejouer (mêmes joueurs)';
+        }
+      } catch (e) {
+        console.error('[TV] Replay error:', e);
+        replayBtn.disabled = false;
+        replayBtn.innerHTML = '🔄 Rejouer (mêmes joueurs)';
+      }
+    });
+  }
+  
+  // Reset button - completely new game
   const resetBtn = $('resetBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', async () => {
-      if (!confirm('Recommencer une nouvelle partie?')) return;
+      if (!confirm('Commencer une nouvelle partie avec de nouveaux joueurs?')) return;
       
       try {
         await fetch(API_URL + '/api/reset', { method: 'POST' });

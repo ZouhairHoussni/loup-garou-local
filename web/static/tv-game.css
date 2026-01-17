@@ -51,7 +51,7 @@ body {
 }
 
 /* =====================================================
-   APP CONTAINER & CANVAS
+   APP CONTAINER & CANVAS - MEDIEVAL ATMOSPHERE
    ===================================================== */
 
 .tv-app {
@@ -63,7 +63,7 @@ body {
   background: var(--bg-night);
 }
 
-/* Medieval Village Background */
+/* Medieval Village Background - Multi-layer */
 .tv-app::before {
   content: '';
   position: absolute;
@@ -72,64 +72,60 @@ body {
   right: 0;
   bottom: 0;
   background: 
-    /* Fog layers */
-    radial-gradient(ellipse 120% 60% at 50% 100%, rgba(30, 25, 20, 0.8) 0%, transparent 60%),
-    /* Stars */
+    /* Fog at bottom */
+    linear-gradient(0deg, rgba(40, 35, 30, 0.6) 0%, transparent 30%),
+    /* Vignette */
+    radial-gradient(ellipse 80% 60% at 50% 50%, transparent 0%, rgba(0,0,0,0.7) 100%),
+    /* Stars layer 1 */
+    radial-gradient(2px 2px at 10% 10%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
     radial-gradient(2px 2px at 20% 15%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
-    radial-gradient(2px 2px at 80% 10%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 40% 8%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 60% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
-    radial-gradient(2px 2px at 15% 25%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 18%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
-    radial-gradient(1px 1px at 35% 5%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
-    radial-gradient(2px 2px at 70% 25%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 8%, rgba(255, 255, 255, 0.6) 0%, transparent 100%),
+    radial-gradient(2px 2px at 40% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 5%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(2px 2px at 60% 18%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 12%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(2px 2px at 80% 8%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 15%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 25%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 35% 22%, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 28%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 24%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 95% 20%, rgba(255, 255, 255, 0.2) 0%, transparent 100%),
     /* Moon glow */
-    radial-gradient(circle at 85% 15%, rgba(212, 162, 76, 0.15) 0%, transparent 30%);
-  animation: starsFlicker 8s ease-in-out infinite;
+    radial-gradient(circle at 85% 12%, rgba(255, 250, 220, 0.15) 0%, transparent 20%),
+    radial-gradient(circle at 85% 12%, rgba(212, 162, 76, 0.1) 0%, transparent 35%);
+  animation: starsFlicker 10s ease-in-out infinite;
   pointer-events: none;
   z-index: 1;
 }
 
-/* Silhouette village layer */
+/* Village silhouette with trees and houses */
 .tv-app::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 180px;
+  height: 200px;
   background: 
-    /* Trees */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3E%3Cpath d='M5 40 L10 25 L7 25 L12 15 L9 15 L15 5 L21 15 L18 15 L23 25 L20 25 L25 40 Z' fill='%23151210'/%3E%3Cpath d='M35 40 L38 30 L36 30 L40 20 L38 20 L42 12 L46 20 L44 20 L48 30 L46 30 L49 40 Z' fill='%23151210'/%3E%3Cpath d='M75 40 L80 28 L77 28 L83 18 L80 18 L87 8 L94 18 L91 18 L97 28 L94 28 L99 40 Z' fill='%23151210'/%3E%3C/svg%3E") repeat-x bottom,
-    /* Houses silhouette */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60'%3E%3Cpath d='M0 60 L0 45 L15 30 L30 45 L30 60 Z' fill='%230f0d0a'/%3E%3Crect x='8' y='48' width='6' height='8' fill='%23d4a24c' opacity='0.3'/%3E%3Cpath d='M50 60 L50 35 L60 25 L70 35 L70 60 Z' fill='%230f0d0a'/%3E%3Crect x='56' y='42' width='8' height='10' fill='%23d4a24c' opacity='0.4'/%3E%3Cpath d='M90 60 L90 50 L100 40 L110 50 L110 60 Z' fill='%230f0d0a'/%3E%3Cpath d='M130 60 L130 38 L145 22 L160 38 L160 60 Z' fill='%230f0d0a'/%3E%3Crect x='140' y='45' width='10' height='12' fill='%23d4a24c' opacity='0.35'/%3E%3Cpath d='M180 60 L180 48 L192 35 L200 45 L200 60 Z' fill='%230f0d0a'/%3E%3C/svg%3E") repeat-x bottom;
-  opacity: 0.6;
+    /* Trees left */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Cpath d='M5 50 L10 30 L7 30 L12 18 L9 18 L15 5 L21 18 L18 18 L23 30 L20 30 L25 50 Z' fill='%23080604'/%3E%3Cpath d='M30 50 L33 38 L31 38 L35 28 L33 28 L38 18 L43 28 L41 28 L45 38 L43 38 L46 50 Z' fill='%23080604'/%3E%3C/svg%3E") repeat-x bottom left,
+    /* Houses center */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 80'%3E%3Cpath d='M20 80 L20 55 L35 40 L50 55 L50 80 Z' fill='%230a0806'/%3E%3Crect x='30' y='60' width='10' height='15' fill='%23d4a24c' opacity='0.15'/%3E%3Cpath d='M70 80 L70 45 L90 25 L110 45 L110 80 Z' fill='%230a0806'/%3E%3Crect x='82' y='52' width='16' height='20' fill='%23d4a24c' opacity='0.2'/%3E%3Cpath d='M130 80 L130 60 L145 48 L160 60 L160 80 Z' fill='%230a0806'/%3E%3Cpath d='M180 80 L180 50 L200 30 L220 50 L220 80 Z' fill='%230a0806'/%3E%3Crect x='192' y='55' width='16' height='18' fill='%23d4a24c' opacity='0.18'/%3E%3Cpath d='M240 80 L240 58 L255 45 L270 58 L270 80 Z' fill='%230a0806'/%3E%3Crect x='250' y='62' width='10' height='12' fill='%23d4a24c' opacity='0.12'/%3E%3C/svg%3E") repeat-x bottom center,
+    /* Trees right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Cpath d='M55 50 L60 32 L57 32 L63 20 L60 20 L68 8 L76 20 L73 20 L79 32 L76 32 L81 50 Z' fill='%23080604'/%3E%3Cpath d='M85 50 L88 40 L86 40 L90 32 L88 32 L93 22 L98 32 L96 32 L100 40 L98 40 L100 50 Z' fill='%23080604'/%3E%3C/svg%3E") repeat-x bottom right,
+    /* Ground gradient */
+    linear-gradient(0deg, rgba(10, 8, 6, 1) 0%, rgba(10, 8, 6, 0.8) 40%, transparent 100%);
+  opacity: 0.9;
   pointer-events: none;
   z-index: 2;
 }
 
 @keyframes starsFlicker {
   0%, 100% { opacity: 1; }
-  25% { opacity: 0.85; }
+  25% { opacity: 0.9; }
   50% { opacity: 0.95; }
-  75% { opacity: 0.9; }
-}
-
-/* Floating mist particles */
-.mist-particle {
-  position: absolute;
-  width: 150px;
-  height: 50px;
-  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
-  animation: floatMist 20s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes floatMist {
-  0% { transform: translateX(-150px); opacity: 0; }
-  10% { opacity: 0.5; }
-  90% { opacity: 0.5; }
-  100% { transform: translateX(calc(100vw + 150px)); opacity: 0; }
+  75% { opacity: 0.85; }
 }
 
 .tv-app.day-mode {
@@ -139,7 +135,7 @@ body {
 .tv-app.day-mode::before {
   background: 
     radial-gradient(ellipse 120% 60% at 50% 100%, rgba(40, 35, 25, 0.8) 0%, transparent 60%),
-    radial-gradient(circle at 75% 20%, rgba(255, 200, 100, 0.2) 0%, transparent 40%);
+    radial-gradient(circle at 20% 20%, rgba(255, 200, 100, 0.25) 0%, transparent 40%);
   animation: none;
 }
 
@@ -193,37 +189,88 @@ body {
   padding: 0;
 }
 
-/* QR Code - Top Left */
+/* QR Code - Top Left with Medieval Parchment Frame */
 .qr-zone {
   position: fixed;
   top: 16px;
   left: 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: rgba(20, 15, 10, 0.9);
-  border: 2px solid var(--gold-dim);
+  gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(145deg, rgba(45, 35, 25, 0.98) 0%, rgba(25, 18, 12, 0.98) 100%);
+  border: 3px solid var(--gold-dim);
   border-radius: 12px;
   z-index: 100;
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(212, 162, 76, 0.1);
+}
+
+/* Decorative corner ornaments */
+.qr-zone::before,
+.qr-zone::after {
+  content: '✦';
+  position: absolute;
+  color: var(--gold);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.qr-zone::before {
+  top: 4px;
+  left: 6px;
+}
+
+.qr-zone::after {
+  bottom: 4px;
+  right: 6px;
 }
 
 .qr-zone .qr-frame {
-  width: 80px;
-  height: 80px;
-  background: #1a1512;
-  border: 2px solid var(--gold);
+  position: relative;
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #f4e4c8 0%, #e8d4b0 50%, #dcc8a0 100%);
+  border: 3px solid var(--gold);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Inner parchment texture */
+.qr-zone .qr-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gold corner accents */
+.qr-zone .qr-frame::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 1px solid rgba(212, 162, 76, 0.4);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .qr-zone .qr-frame canvas,
 .qr-zone .qr-frame img {
-  width: 76px !important;
-  height: 76px !important;
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 2px;
+  position: relative;
+  z-index: 2;
 }
 
 .qr-info {
@@ -231,15 +278,21 @@ body {
 }
 
 .qr-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--gold);
-  letter-spacing: 1px;
-  margin-bottom: 4px;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .qr-info code {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-dim);
+  word-break: break-all;
+  display: block;
+  max-width: 160px;
 }
 
 /* Title - Top Center */
@@ -1318,18 +1371,28 @@ body {
    GAME OVER SCREEN
    ===================================================== */
 
+#screenGameOver {
+  padding-bottom: 100px;
+}
+
 .gameover-container {
   text-align: center;
   width: 100%;
   max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 
 .victory-banner {
-  margin-bottom: 40px;
-  padding: 32px;
+  margin-bottom: 20px;
+  padding: 20px 32px;
   background: linear-gradient(135deg, rgba(212, 162, 76, 0.2) 0%, transparent 100%);
   border-radius: var(--radius-lg);
   animation: victoryGlow 2s infinite;
+  flex-shrink: 0;
 }
 
 @keyframes victoryGlow {
@@ -1348,25 +1411,29 @@ body {
 }
 
 .victory-icon {
-  font-size: 80px;
-  margin-bottom: 16px;
+  font-size: 56px;
+  margin-bottom: 10px;
 }
 
 .victory-title {
   font-family: var(--font-display);
-  font-size: 48px;
-  margin-bottom: 8px;
+  font-size: 32px;
+  margin-bottom: 6px;
 }
 
 .victory-team {
-  font-size: 24px;
+  font-size: 16px;
   color: var(--gold);
 }
 
+.final-reveal {
+  flex-shrink: 0;
+}
+
 .final-reveal h3 {
-  font-size: 14px;
+  font-size: 11px;
   color: var(--text-dim);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 2px;
   text-align: center;
@@ -1377,27 +1444,27 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-items: flex-start;
-  gap: 24px;
-  margin-bottom: 32px;
-  padding: 0 20px;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 0 16px;
 }
 
 .role-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100px;
+  width: 80px;
   text-align: center;
 }
 
 .role-card .card-img {
-  width: 85px;
-  height: 85px;
-  border-radius: 12px;
+  width: 65px;
+  height: 65px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 3px solid var(--border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  margin-bottom: 10px;
+  border: 2px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  margin-bottom: 6px;
   opacity: 0;
   transform: scale(0.8) rotateY(90deg);
   transition: all 0.6s ease;
@@ -1409,26 +1476,100 @@ body {
 }
 
 .role-card .card-img img {
-  width: 85px;
-  height: 85px;
+  width: 65px;
+  height: 65px;
   object-fit: cover;
   display: block;
 }
 
 .role-card.wolf .card-img {
   border-color: var(--blood);
-  box-shadow: 0 4px 20px rgba(139, 0, 0, 0.5);
+  box-shadow: 0 4px 16px rgba(139, 0, 0, 0.5);
 }
 
 .role-card .name {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .role-card .role {
-  font-size: 11px;
+  font-size: 9px;
   color: var(--gold);
+}
+
+/* Game Over Buttons */
+.gameover-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.btn-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8860b 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #1a1512;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(212, 162, 76, 0.4);
+}
+
+.btn-replay:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 30px rgba(212, 162, 76, 0.6);
+}
+
+.btn-newgame {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-newgame:hover {
+  border-color: var(--gold-dim);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Restart/New Game Button (legacy) */
+.btn-restart {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--gold) 0%, #b8860b 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #1a1512;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(212, 162, 76, 0.4);
+  margin-top: 16px;
+  flex-shrink: 0;
+}
+
+.btn-restart:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 30px rgba(212, 162, 76, 0.6);
 }
 
 .btn-reset {
@@ -1686,16 +1827,16 @@ body {
 .connection-status {
   position: fixed;
   bottom: 16px;
-  left: 16px;
+  right: 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: rgba(20, 15, 10, 0.9);
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(20, 15, 10, 0.8);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  font-size: 11px;
-  z-index: 100;
+  border-radius: 12px;
+  font-size: 10px;
+  z-index: 90;
 }
 
 .status-dot {
