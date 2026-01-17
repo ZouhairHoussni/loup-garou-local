@@ -109,6 +109,7 @@ class GameState:
     pending: ActionInbox = field(default_factory=ActionInbox)
     vote_box: VoteBox = field(default_factory=VoteBox)
     timers: Timers = field(default_factory=Timers)
+    ready_to_vote: Set[str] = field(default_factory=set)  # Player IDs ready to vote
 
 
 class WSClientType(str, Enum):
@@ -160,13 +161,19 @@ class Game:
     def _public_snapshot(self) -> Dict[str, Any]:
         alive = []
         dead = []
+        game_over = self.state.phase == Phase.GAME_OVER
+        
         for p in self.players.values():
             entry = {"id": p.id, "name": p.name, "alive": p.alive}
+            
+            # Always reveal roles for dead players, and for ALL players at game over
+            if not p.alive or game_over:
+                entry["role"] = p.role.value if p.role else None
+                entry["role_fr"] = ROLE_FR.get(p.role) if p.role else None
+            
             if p.alive:
                 alive.append(entry)
             else:
-                entry["role"] = p.role.value if p.role else None
-                entry["role_fr"] = ROLE_FR.get(p.role) if p.role else None
                 dead.append(entry)
 
         return {
@@ -274,13 +281,39 @@ class Game:
         self._log(line)
         await self._broadcast_public({"type": "NARRATOR_LINE", "line": self.state.narrator[-1]})
 
-    async def join(self, name: str) -> str:
+    def _capitalize_name(self, name: str) -> str:
+        """Capitalize first letter of each word if all lowercase."""
+        name = name.strip()[:24]
+        if name and name == name.lower():
+            return name.title()
+        return name
+
+    def _is_name_taken(self, name: str) -> bool:
+        """Check if a name is already used by another player."""
+        name_lower = name.lower()
+        for p in self.players.values():
+            if p.name.lower() == name_lower:
+                return True
+        return False
+
+    async def join(self, name: str) -> Dict[str, Any]:
+        """Join the game. Returns dict with ok, player_id, or error."""
         async with self._lock:
+            # Clean and capitalize name
+            clean_name = self._capitalize_name(name)
+            if not clean_name:
+                clean_name = f"Joueur-{len(self.players) + 1}"
+            
+            # Check for duplicate names
+            if self._is_name_taken(clean_name):
+                return {"ok": False, "error": "name_taken", "message": f"Le nom '{clean_name}' est déjà pris. Choisissez un autre nom."}
+            
             pid = uuid.uuid4().hex[:8]
-            self.players[pid] = Player(id=pid, name=(name.strip()[:24] or f"Player-{pid}"))
-        await self._narrate(f"{name} a rejoint le village.")
+            self.players[pid] = Player(id=pid, name=clean_name)
+        
+        await self._narrate(f"{clean_name} a rejoint le village.")
         await self._sync_all()
-        return pid
+        return {"ok": True, "player_id": pid, "name": clean_name}
 
     async def reset(self) -> None:
         async with self._lock:
@@ -386,21 +419,62 @@ class Game:
         await self._narrate(f"Nuit {self.state.night_count}. Le village s'endort.")
         await self._sync_all()
 
-        if self.state.night_count == 1:
+        # Only run cupid on first night if enabled
+        if self.state.night_count == 1 and self.use_cupid:
             await self._step_cupid()
 
         await self._step_wolves()
-        await self._step_seer()
-        await self._step_witch()
+        
+        # Only run seer if enabled
+        if self.use_seer:
+            await self._step_seer()
+        
+        # Only run witch if enabled
+        if self.use_witch:
+            await self._step_witch()
+            
         await self._resolve_night()
 
     async def _day_and_vote(self) -> None:
         async with self._lock:
             self.state.phase = Phase.DAY
             self.state.day_count += 1
+            self.state.ready_to_vote = set()  # Reset ready players
         await self._narrate(f"Jour {self.state.day_count}. Discutez.")
-        await self._countdown(self.T_DISCUSS, phase=Phase.DAY, label="Discussion")
+        
+        # Countdown with early exit if everyone is ready
+        await self._countdown_with_ready_check(self.T_DISCUSS, phase=Phase.DAY, label="Discussion")
         await self._vote_phase()
+    
+    async def _countdown_with_ready_check(self, secs: int, phase: Phase, label: str) -> None:
+        """Countdown that can end early when all alive players are ready to vote."""
+        end = time.time() + secs
+        while time.time() < end:
+            remaining = int(end - time.time())
+            async with self._lock:
+                self.state.timers.phase_ends_at = end
+                self.state.timers.seconds_left = remaining
+                
+                # Check if everyone is ready
+                alive_ids = self._alive_ids()
+                ready_count = len(self.state.ready_to_vote & set(alive_ids))
+                total_alive = len(alive_ids)
+                
+                if total_alive > 0 and ready_count >= total_alive:
+                    # Everyone is ready - skip remaining time
+                    await self._broadcast_public({"type": "ALL_READY", "message": "Tout le monde est prêt!"})
+                    return
+                    
+            await self._broadcast_public({
+                "type": "TIMER",
+                "phase": phase.value,
+                "label": label,
+                "remaining": remaining,
+                "ready_count": ready_count if 'ready_count' in dir() else 0,
+                "total_alive": total_alive if 'total_alive' in dir() else 0
+            })
+            await self._sync_all()
+            await asyncio.sleep(1)
 
     async def _vote_phase(self) -> None:
         async with self._lock:
@@ -812,9 +886,9 @@ async def health():
 
 @app.post("/api/join")
 async def api_join(payload: Dict[str, Any]):
-    name = (payload.get("name") or "").strip() or "Player"
-    pid = await GAME.join(name)
-    return {"ok": True, "player_id": pid}
+    name = (payload.get("name") or "").strip() or "Joueur"
+    result = await GAME.join(name)
+    return result
 
 
 @app.post("/api/start")
@@ -859,6 +933,35 @@ async def api_vote(payload: Dict[str, Any]):
         return {"ok": False, "error": "Missing voter_id or target_id"}
     await GAME.cast_vote(voter_id, target_id)
     return {"ok": True}
+
+
+@app.post("/api/ready")
+async def api_ready(payload: Dict[str, Any]):
+    """Mark a player as ready to vote during discussion phase."""
+    player_id = payload.get("player_id")
+    if not player_id:
+        return {"ok": False, "error": "Missing player_id"}
+    
+    async with GAME._lock:
+        if GAME.state.phase != Phase.DAY:
+            return {"ok": False, "error": "Not in discussion phase"}
+        if player_id not in GAME.players:
+            return {"ok": False, "error": "Player not found"}
+        if not GAME.players[player_id].alive:
+            return {"ok": False, "error": "Player is dead"}
+        
+        GAME.state.ready_to_vote.add(player_id)
+        ready_count = len(GAME.state.ready_to_vote & set(GAME._alive_ids()))
+        total_alive = len(GAME._alive_ids())
+    
+    await GAME._broadcast_public({
+        "type": "PLAYER_READY",
+        "player_id": player_id,
+        "ready_count": ready_count,
+        "total_alive": total_alive
+    })
+    
+    return {"ok": True, "ready_count": ready_count, "total_alive": total_alive}
 
 
 @app.websocket("/ws")

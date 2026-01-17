@@ -296,14 +296,26 @@ function init() {
   
   // ============ LOBBY ============
   function updateLobby() {
-    // Player count
-    const count = $('playerCount');
-    if (count) count.textContent = state.alive.length;
+    // Player count and start button
+    const countEl = $('playerCount');
+    const countBtn = $('playerCountBtn');
+    const hintEl = $('startHint');
+    const playerCount = state.alive.length;
     
-    // Start button
-    const startBtn = $('startBtn');
-    if (startBtn) {
-      startBtn.disabled = state.alive.length < 5;
+    if (countEl) countEl.textContent = playerCount;
+    
+    // Update button state based on player count
+    if (countBtn) {
+      const canStart = playerCount >= 5;
+      countBtn.classList.toggle('ready', canStart);
+      
+      if (hintEl) {
+        if (canStart) {
+          hintEl.textContent = '▶ COMMENCER';
+        } else {
+          hintEl.textContent = `${5 - playerCount} de plus requis`;
+        }
+      }
     }
     
     // Players in circle
@@ -311,12 +323,12 @@ function init() {
     if (ring) {
       const players = state.alive;
       const n = players.length;
-      const radius = 110;
+      const radius = 130;
       
       ring.innerHTML = players.map((p, i) => {
         const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
-        const x = 140 + radius * Math.cos(angle);
-        const y = 140 + radius * Math.sin(angle);
+        const x = 160 + radius * Math.cos(angle);
+        const y = 160 + radius * Math.sin(angle);
         
         return `
           <div class="player-token" style="left:${x}px;top:${y}px;">
@@ -327,11 +339,41 @@ function init() {
       }).join('');
     }
     
-    // Join URL
+    // Join URL and QR Code
     const joinUrl = $('joinUrl');
+    const qrCanvas = $('qrCanvas');
+    const playerUrl = `${window.location.protocol}//${host}${portPart}/player/`;
+    
     if (joinUrl) {
-      const playerUrl = `${window.location.protocol}//${host}${portPart}/player/`;
       joinUrl.textContent = playerUrl;
+    }
+    
+    // Generate QR code (only once)
+    if (qrCanvas && !qrCanvas.dataset.generated) {
+      qrCanvas.dataset.generated = 'true';
+      generateQRCode(qrCanvas, playerUrl);
+    }
+  }
+  
+  // QR Code generation with medieval colors
+  function generateQRCode(canvas, url) {
+    try {
+      if (typeof QRCode !== 'undefined') {
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        
+        new QRCode(canvas.parentElement, {
+          text: url,
+          width: 76,
+          height: 76,
+          colorDark: "#d4a24c",
+          colorLight: "#1a1512",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+        
+        canvas.style.display = 'none';
+      }
+    } catch (e) {
+      console.warn('[TV] QR generation failed:', e);
     }
   }
   
@@ -362,70 +404,84 @@ function init() {
     
     const theater = $('deathTheater');
     const noDeath = $('noDeath');
+    const deathsRow = $('deathsRow');
     
     if (deathQueue.length === 0) {
-      theater.style.display = 'none';
-      noDeath.style.display = 'block';
+      if (theater) theater.style.display = 'none';
+      if (noDeath) noDeath.style.display = 'block';
       setTimeout(() => showScreen('screenDay'), 3000);
       return;
     }
     
-    theater.style.display = 'block';
-    noDeath.style.display = 'none';
-    deathIndex = 0;
+    if (theater) theater.style.display = 'block';
+    if (noDeath) noDeath.style.display = 'none';
     
-    showNextDeath();
+    // Build all death cards and show them one by one with animation
+    if (deathsRow) {
+      deathsRow.innerHTML = '';
+      
+      deathQueue.forEach((victim, index) => {
+        // Determine if this is a lover death (broken heart)
+        const isLover = victim.death_cause === 'heartbreak' || victim.cause === 'heartbreak';
+        const cause = isLover ? '💔 mort de chagrin' : getCauseText(victim);
+        
+        const cardHtml = `
+          <div class="death-card ${isLover ? 'lover' : ''}" style="opacity:0;transform:scale(0.5);">
+            <div class="card-glow"></div>
+            <div class="card-img">
+              <img src="${getRoleImage(victim.role)}" alt="${victim.role}">
+            </div>
+            <div class="death-info">
+              <div class="victim-name">${escapeHtml(victim.name)}</div>
+              <div class="victim-role">${getRoleName(victim.role)}</div>
+              <div class="death-cause">${cause}</div>
+            </div>
+          </div>
+        `;
+        
+        deathsRow.insertAdjacentHTML('beforeend', cardHtml);
+        
+        // Animate this card after a delay
+        setTimeout(() => {
+          const card = deathsRow.children[index];
+          if (card) {
+            card.style.transition = 'all 0.8s ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+            fx?.burst({ kind: 'ember', count: 15 });
+          }
+        }, 500 + index * 1200); // Stagger by 1.2s each
+      });
+    }
+    
+    // Move to day after all deaths shown
+    const totalDuration = 500 + deathQueue.length * 1200 + 2500;
+    setTimeout(() => {
+      deathQueue = [];
+      deathIndex = 0;
+      showScreen('screenDay');
+    }, totalDuration);
   }
   
+  function getCauseText(victim) {
+    // Check for special causes
+    if (victim.death_cause === 'wolves' || victim.cause === 'wolves') {
+      return 'dévoré par les loups';
+    }
+    if (victim.death_cause === 'poison' || victim.cause === 'poison') {
+      return 'empoisonné par la sorcière';
+    }
+    if (victim.death_cause === 'vote' || victim.cause === 'vote') {
+      return 'exécuté par le village';
+    }
+    // Default
+    const causes = ['a été trouvé sans vie', 'n\'a pas survécu', 'est mort cette nuit'];
+    return causes[Math.floor(Math.random() * causes.length)];
+  }
+  
+  // Keep this for backwards compat but it's not used anymore
   function showNextDeath() {
-    if (deathIndex >= deathQueue.length) {
-      // All deaths shown, move to day
-      setTimeout(() => {
-        deathQueue = [];
-        deathIndex = 0;
-        showScreen('screenDay');
-      }, 2000);
-      return;
-    }
-    
-    const victim = deathQueue[deathIndex];
-    
-    // Update death card
-    const card = $('deathCard');
-    const img = $('deathCardImg');
-    const name = $('victimName');
-    const role = $('victimRole');
-    const cause = $('deathCause');
-    const current = $('deathCurrent');
-    const total = $('deathTotal');
-    
-    if (img) img.src = getRoleImage(victim.role);
-    if (name) name.textContent = victim.name;
-    if (role) role.textContent = getRoleName(victim.role);
-    if (cause) {
-      // Determine death cause based on role and context
-      const causes = [
-        'a été dévoré par les loups',
-        'a été trouvé sans vie',
-        'n\'a pas survécu à la nuit'
-      ];
-      cause.textContent = causes[Math.floor(Math.random() * causes.length)];
-    }
-    if (current) current.textContent = deathIndex + 1;
-    if (total) total.textContent = deathQueue.length;
-    
-    // Animate card
-    if (card) {
-      card.style.animation = 'none';
-      card.offsetHeight; // Trigger reflow
-      card.style.animation = 'deathReveal 1s ease-out';
-    }
-    
-    fx?.burst({ kind: 'ember', count: 25 });
-    
-    // Show next death after delay
-    deathIndex++;
-    setTimeout(showNextDeath, 4000);
+    // Deprecated - now showing all deaths at once
   }
   
   // ============ DAY ============
@@ -591,9 +647,48 @@ function init() {
   function appendNarrator(line) {
     const log = $('narratorLog');
     if (log) {
-      log.textContent += line + '\n';
+      // Format line with medieval styling and colors
+      const formattedLine = formatNarratorLine(line);
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      
+      const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      entry.innerHTML = `
+        <div class="log-time">${time}</div>
+        <div class="log-text">${formattedLine}</div>
+      `;
+      
+      log.appendChild(entry);
       log.scrollTop = log.scrollHeight;
     }
+  }
+  
+  function formatNarratorLine(line) {
+    // Remove timestamp from server if present (e.g. "[15:50:50] Axel a rejoint")
+    let formatted = line.replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, '');
+    formatted = escapeHtml(formatted);
+    
+    // Highlight roles
+    formatted = formatted.replace(/\b(Loup-Garou|Loup|loups?)\b/gi, '<span class="role-wolf">$1</span>');
+    formatted = formatted.replace(/\b(Villageois)\b/gi, '<span class="role-villager">$1</span>');
+    formatted = formatted.replace(/\b(Voyante)\b/gi, '<span class="role-seer">$1</span>');
+    formatted = formatted.replace(/\b(Sorcière)\b/gi, '<span class="role-witch">$1</span>');
+    formatted = formatted.replace(/\b(Cupidon)\b/gi, '<span class="role-cupid">$1</span>');
+    
+    // Highlight actions
+    formatted = formatted.replace(/\b(mort|tué|éliminé|dévoré|assassiné)\b/gi, '<span class="action-death">$1</span>');
+    formatted = formatted.replace(/\b(vote|voté|votent)\b/gi, '<span class="action-vote">$1</span>');
+    
+    // Highlight phase changes
+    formatted = formatted.replace(/\b(Nuit \d+)/gi, '<span class="phase-night">🌙 $1</span>');
+    formatted = formatted.replace(/\b(Jour \d+)/gi, '<span class="phase-day">☀️ $1</span>');
+    
+    // Highlight player names that join - make first word bold
+    if (formatted.includes('a rejoint le village')) {
+      formatted = formatted.replace(/^(\S+)/, '<span class="player-name">$1</span>');
+    }
+    
+    return formatted;
   }
   
   // Narrator panel toggle
@@ -613,22 +708,27 @@ function init() {
     });
   }
   
-  // ============ CONFIGURATION ============
-  const configToggle = $('configToggle');
+  // ============ CONFIGURATION SIDEBAR ============
+  const configBtn = $('configBtn');
   const configPanel = $('configPanel');
+  const closeConfig = $('closeConfig');
   
-  if (configToggle && configPanel) {
-    configToggle.addEventListener('click', () => {
-      configPanel.classList.toggle('open');
+  if (configBtn) {
+    configBtn.addEventListener('click', () => {
+      configPanel?.classList.toggle('open');
     });
   }
   
-  // Role card selection
-  const rolesGrid = $('rolesCardsGrid');
-  if (rolesGrid) {
-    rolesGrid.addEventListener('click', (e) => {
-      const card = e.target.closest('.role-config-card');
-      if (!card || card.classList.contains('disabled')) return;
+  if (closeConfig) {
+    closeConfig.addEventListener('click', () => {
+      configPanel?.classList.remove('open');
+    });
+  }
+  
+  // Role card selection in config
+  document.querySelectorAll('.role-card-config').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('disabled')) return;
       
       const checkbox = card.querySelector('input[type="checkbox"]');
       if (checkbox) {
@@ -637,16 +737,21 @@ function init() {
         fx?.burst({ kind: 'spark', count: 6 });
       }
     });
-  }
+  });
   
   const applyConfigBtn = $('applyConfigBtn');
   if (applyConfigBtn) {
     applyConfigBtn.addEventListener('click', async () => {
       // Read config values
-      config.nightAction = parseInt($('cfgNightAction')?.value) || 22;
-      config.dayDiscuss = parseInt($('cfgDayDiscuss')?.value) || 15;
-      config.voteTime = parseInt($('cfgVoteTime')?.value) || 25;
-      config.resultTime = parseInt($('cfgResultTime')?.value) || 5;
+      const nightMin = parseInt($('cfgNightMin')?.value) || 1;
+      const dayMin = parseInt($('cfgDayMin')?.value) || 1;
+      const voteMin = parseInt($('cfgVoteMin')?.value) || 1;
+      const resultSec = parseInt($('cfgResultSec')?.value) || 30;
+      
+      config.nightAction = Math.max(10, nightMin * 60);
+      config.dayDiscuss = Math.max(10, dayMin * 60);
+      config.voteTime = Math.max(10, voteMin * 60);
+      config.resultTime = resultSec;
       
       // Read role selections
       config.roles = {
@@ -667,41 +772,73 @@ function init() {
         });
         if (res.ok) {
           fx?.burst({ kind: 'spark', count: 20 });
-          // Visual feedback
-          applyConfigBtn.textContent = '✓ Configuration Appliquée!';
+          applyConfigBtn.textContent = '✓ Appliqué!';
           setTimeout(() => {
-            applyConfigBtn.textContent = '⚔️ Appliquer la Configuration';
+            applyConfigBtn.textContent = '✓ Appliquer';
           }, 2000);
         }
       } catch (e) {
         console.warn('[TV] Config update failed:', e);
       }
       
-      // Close panel
       configPanel?.classList.remove('open');
     });
   }
   
-  // ============ BUTTONS ============
-  const startBtn = $('startBtn');
-  if (startBtn) {
-    startBtn.addEventListener('click', async () => {
-      startBtn.disabled = true;
-      startBtn.innerHTML = '<span class="btn-icon">⏳</span><span>Lancement...</span>';
+  // ============ PLAYER COUNT BUTTON (Start Game) ============
+  const playerCountBtn = $('playerCountBtn');
+  if (playerCountBtn) {
+    playerCountBtn.addEventListener('click', async () => {
+      // Only start if we have enough players
+      if (!playerCountBtn.classList.contains('ready')) return;
       
+      // Visual feedback
+      const hintEl = $('startHint');
+      if (hintEl) hintEl.textContent = '⏳ Lancement...';
+      playerCountBtn.style.pointerEvents = 'none';
+      
+      // Send config first
+      try {
+        const nightMin = parseInt($('cfgNightMin')?.value) || 1;
+        const dayMin = parseInt($('cfgDayMin')?.value) || 1;
+        const voteMin = parseInt($('cfgVoteMin')?.value) || 1;
+        const resultSec = parseInt($('cfgResultSec')?.value) || 30;
+        
+        config.nightAction = Math.max(10, nightMin * 60);
+        config.dayDiscuss = Math.max(10, dayMin * 60);
+        config.voteTime = Math.max(10, voteMin * 60);
+        config.resultTime = resultSec;
+        
+        config.roles = {
+          seer: $('cfgRoleSeer')?.checked ?? true,
+          witch: $('cfgRoleWitch')?.checked ?? true,
+          cupid: $('cfgRoleCupid')?.checked ?? true,
+          hunter: $('cfgRoleHunter')?.checked ?? false
+        };
+        
+        await fetch(API_URL + '/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+      } catch (e) {
+        console.warn('[TV] Config send failed:', e);
+      }
+      
+      // Start game
       try {
         const res = await fetch(API_URL + '/api/start', { method: 'POST' });
         const data = await res.json();
         
         if (!data.ok) {
           alert('Erreur: ' + (data.error || 'Impossible de démarrer'));
-          startBtn.disabled = false;
-          startBtn.innerHTML = '<span class="btn-icon">⚔️</span><span>Que la chasse commence!</span>';
+          if (hintEl) hintEl.textContent = '▶ COMMENCER';
+          playerCountBtn.style.pointerEvents = '';
         }
       } catch (e) {
         console.error('[TV] Start error:', e);
-        startBtn.disabled = false;
-        startBtn.innerHTML = '<span class="btn-icon">⚔️</span><span>Que la chasse commence!</span>';
+        if (hintEl) hintEl.textContent = '▶ COMMENCER';
+        playerCountBtn.style.pointerEvents = '';
       }
     });
   }

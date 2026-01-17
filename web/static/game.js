@@ -9,73 +9,153 @@ document.addEventListener('DOMContentLoaded', init);
 function init() {
   console.log('[LG] === GAME UI STARTING ===');
   
-  // Inject additional styles for witch UI
+  // Inject additional styles for witch UI and vote
   const witchStyles = document.createElement('style');
   witchStyles.textContent = `
-    .witch-poison-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    .witch-victim-compact {
+      text-align: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .witch-victim-compact strong {
+      color: #ff6b6b;
+    }
+    .witch-actions-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .witch-action-btn {
+      padding: 12px 20px;
+      background: rgba(0,0,0,0.3);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      color: #f5f0e8;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .witch-action-btn:hover:not(:disabled) {
+      border-color: rgba(255,255,255,0.4);
+    }
+    .witch-action-btn.selected {
+      background: rgba(212,162,76,0.3);
+      border-color: #d4a24c;
+    }
+    .witch-action-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .witch-poison-select {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 8px;
-      margin: 12px 0;
-      padding: 8px;
+      padding: 12px;
       background: rgba(0,0,0,0.2);
       border-radius: 12px;
+      max-height: 200px;
+      overflow-y: auto;
     }
-    .target-btn-compact {
+    .poison-target-btn {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
+      padding: 8px 14px;
       background: rgba(0,0,0,0.3);
       border: 2px solid rgba(255,255,255,0.15);
-      border-radius: 10px;
+      border-radius: 8px;
       color: #f5f0e8;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .target-btn-compact:hover {
-      background: rgba(139,0,0,0.4);
+    .poison-target-btn:hover {
       border-color: #8b0000;
+      background: rgba(139,0,0,0.3);
     }
-    .target-btn-compact .target-avatar {
-      width: 28px;
-      height: 28px;
+    .poison-target-btn.selected {
+      border-color: #8b0000;
+      background: rgba(139,0,0,0.4);
+    }
+    .poison-target-btn .pt-avatar {
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: rgba(255,255,255,0.1);
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 14px;
+      font-size: 12px;
     }
-    .target-btn-compact .target-name {
+    .poison-target-btn .pt-name {
       font-size: 13px;
-      font-weight: 600;
     }
-    .witch-selected-target {
-      padding: 12px 16px;
-      background: rgba(139,0,0,0.3);
-      border: 2px solid #8b0000;
+    /* Vote confirm button */
+    .vote-confirm-btn {
+      margin-top: 16px;
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #8b0000 0%, #5a0000 100%);
+      border: none;
       border-radius: 10px;
-      margin: 12px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .witch-selected-target strong {
-      color: #ff6b6b;
-    }
-    .btn-clear {
-      margin-left: auto;
-      padding: 4px 10px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 6px;
       color: #f5f0e8;
+      font-size: 16px;
+      font-weight: 700;
       cursor: pointer;
+      box-shadow: 0 4px 20px rgba(139,0,0,0.4);
+      transition: all 0.2s;
     }
-    .btn-clear:hover {
-      background: rgba(255,255,255,0.2);
+    .vote-confirm-btn:hover:not(:disabled) {
+      transform: scale(1.02);
+      box-shadow: 0 6px 28px rgba(139,0,0,0.5);
+    }
+    .vote-confirm-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .vote-confirmed {
+      margin-top: 16px;
+      padding: 14px 32px;
+      background: rgba(39, 174, 96, 0.2);
+      border: 2px solid #27ae60;
+      border-radius: 10px;
+      color: #27ae60;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    /* Ready to vote button */
+    .ready-vote-btn {
+      margin-top: 24px;
+      padding: 16px 32px;
+      background: linear-gradient(135deg, #d4a24c 0%, #b8860b 100%);
+      border: none;
+      border-radius: 12px;
+      color: #1a1512;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(212,162,76,0.4);
+      transition: all 0.2s;
+    }
+    .ready-vote-btn:hover:not(:disabled) {
+      transform: scale(1.02);
+      box-shadow: 0 6px 28px rgba(212,162,76,0.5);
+    }
+    .ready-vote-btn.ready {
+      background: rgba(39, 174, 96, 0.2);
+      border: 2px solid #27ae60;
+      color: #27ae60;
+      box-shadow: none;
+    }
+    .ready-vote-btn:disabled {
+      cursor: default;
+    }
+    .ready-count {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #888;
     }
   `;
   document.head.appendChild(witchStyles);
@@ -202,20 +282,25 @@ function init() {
       console.log('[LG] Join response data:', data);
       
       if (!data.ok) {
+        // Handle name taken error
+        if (data.error === 'name_taken') {
+          alert(data.message || 'Ce nom est déjà pris. Choisissez un autre nom.');
+          return false;
+        }
         throw new Error(data.error || 'Join failed');
       }
       
-      // Save player ID
+      // Save player ID and actual name (may be capitalized)
       config.playerId = data.player_id;
-      config.playerName = name;
+      config.playerName = data.name || name;
       
       // Update URL
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('player_id', config.playerId);
-      newUrl.searchParams.set('name', name);
+      newUrl.searchParams.set('name', config.playerName);
       window.history.replaceState({}, '', newUrl.toString());
       
-      console.log('[LG] Joined! Player ID:', config.playerId);
+      console.log('[LG] Joined! Player ID:', config.playerId, 'Name:', config.playerName);
       
       // Connect WebSocket and show waiting
       connectWebSocket();
@@ -411,9 +496,7 @@ function init() {
     } else if (state.phase === 'NIGHT') {
       handleNightPhase(phaseChanged);
     } else if (state.phase === 'DAY') {
-      if (phaseChanged || currentScreen === 'screenNightWait' || currentScreen === 'screenNightAction') {
-        showScreen('screenDay');
-      }
+      showDayScreen(phaseChanged);
     } else if (state.phase === 'VOTE') {
       showVoteScreen(phaseChanged);
     } else if (state.phase === 'GAME_OVER') {
@@ -620,39 +703,30 @@ function init() {
     } else if (step === 'WITCH') {
       if (title) title.textContent = '🧪 Tes potions magiques';
       
-      // Build witch UI
-      let subtitleHtml = '';
-      
-      // Show victim info
-      if (state.witch_ctx?.victim_name) {
-        subtitleHtml += `
-          <div class="witch-victim">
-            <div class="witch-victim-label">Victime des loups cette nuit</div>
-            <div class="witch-victim-name">💀 ${escapeHtml(state.witch_ctx.victim_name)}</div>
-          </div>
-        `;
-      } else {
-        subtitleHtml += `
-          <div style="color:#888;margin-bottom:16px;">Personne n'a été attaqué cette nuit.</div>
-        `;
-      }
-      
+      // Build compact witch UI
       const canHeal = !state.me?.witch_heal_used && state.witch_ctx?.victim_name;
       const canPoison = !state.me?.witch_poison_used;
       
+      let subtitleHtml = '';
+      
+      // Show victim info compactly
+      if (state.witch_ctx?.victim_name) {
+        subtitleHtml += `<div class="witch-victim-compact">Victime des loups: <strong>${escapeHtml(state.witch_ctx.victim_name)}</strong></div>`;
+      } else {
+        subtitleHtml += `<div class="witch-victim-compact" style="color:#888;">Aucune victime cette nuit</div>`;
+      }
+      
+      // Horizontal buttons
       subtitleHtml += `
-        <div class="witch-potions">
-          <button id="witchHealBtn" class="potion-btn" ${canHeal ? '' : 'disabled'}>
-            <div class="potion-icon">💚</div>
-            <div class="potion-label">${state.me?.witch_heal_used ? 'Utilisée' : 'Sauver'}</div>
+        <div class="witch-actions-row">
+          <button id="witchHealBtn" class="witch-action-btn" ${canHeal ? '' : 'disabled'}>
+            💚 ${state.me?.witch_heal_used ? 'Utilisée' : 'Sauver'}
           </button>
-          <button id="witchPoisonBtn" class="potion-btn" ${canPoison ? '' : 'disabled'}>
-            <div class="potion-icon">💀</div>
-            <div class="potion-label">${state.me?.witch_poison_used ? 'Utilisée' : 'Empoisonner'}</div>
+          <button id="witchPoisonBtn" class="witch-action-btn" ${canPoison ? '' : 'disabled'}>
+            💀 ${state.me?.witch_poison_used ? 'Utilisée' : 'Poison'}
           </button>
         </div>
-        <div id="witchPoisonTargets" class="witch-poison-grid" style="display:none;max-height:180px;overflow-y:auto;"></div>
-        <div id="witchSelectedTarget" class="witch-selected-target" style="display:none;"></div>
+        <div id="witchPoisonSelect" class="witch-poison-select" style="display:none;"></div>
       `;
       
       if (subtitle) subtitle.innerHTML = subtitleHtml;
@@ -660,12 +734,10 @@ function init() {
       let useHeal = false;
       let poisonTarget = null;
       
-      // Set up button handlers after DOM update
       setTimeout(() => {
         const healBtn = $('witchHealBtn');
         const poisonBtn = $('witchPoisonBtn');
-        const poisonTargets = $('witchPoisonTargets');
-        const selectedDiv = $('witchSelectedTarget');
+        const poisonSelect = $('witchPoisonSelect');
         
         if (healBtn && canHeal) {
           healBtn.onclick = () => {
@@ -674,44 +746,35 @@ function init() {
           };
         }
         
-        if (poisonBtn && canPoison) {
+        if (poisonBtn && canPoison && poisonSelect) {
           poisonBtn.onclick = () => {
-            const showTargets = !poisonBtn.classList.contains('selected');
-            poisonBtn.classList.toggle('selected', showTargets);
-            
-            if (showTargets && poisonTargets) {
-              poisonTargets.style.display = 'grid';
-              poisonTargets.innerHTML = '';
-              // Build compact target grid
-              allTargets.forEach(p => {
-                const btn = document.createElement('button');
-                btn.className = 'target-btn-compact';
-                btn.innerHTML = `<span class="target-avatar">${(p.name||'?')[0].toUpperCase()}</span><span class="target-name">${escapeHtml(p.name)}</span>`;
-                btn.onclick = (e) => {
-                  e.stopPropagation();
-                  poisonTarget = p.id;
-                  // Collapse grid and show selection
-                  poisonTargets.style.display = 'none';
-                  if (selectedDiv) {
-                    selectedDiv.style.display = 'block';
-                    selectedDiv.innerHTML = `<span>Cible: </span><strong>${escapeHtml(p.name)}</strong> <button id="witchClearTarget" class="btn-clear">✕</button>`;
-                    const clearBtn = $('witchClearTarget');
-                    if (clearBtn) {
-                      clearBtn.onclick = () => {
-                        poisonTarget = null;
-                        poisonBtn.classList.remove('selected');
-                        selectedDiv.style.display = 'none';
-                      };
-                    }
-                  }
+            const isOpen = poisonSelect.style.display !== 'none';
+            if (isOpen) {
+              poisonSelect.style.display = 'none';
+              if (!poisonTarget) poisonBtn.classList.remove('selected');
+            } else {
+              poisonBtn.classList.add('selected');
+              poisonSelect.style.display = 'block';
+              // Build horizontal scrollable list
+              poisonSelect.innerHTML = allTargets.map(p => 
+                `<button class="poison-target-btn ${poisonTarget === p.id ? 'selected' : ''}" data-id="${p.id}">
+                  <span class="pt-avatar">${(p.name||'?')[0].toUpperCase()}</span>
+                  <span class="pt-name">${escapeHtml(p.name)}</span>
+                </button>`
+              ).join('');
+              
+              // Attach click handlers
+              poisonSelect.querySelectorAll('.poison-target-btn').forEach(btn => {
+                btn.onclick = () => {
+                  poisonTarget = btn.dataset.id;
+                  poisonSelect.querySelectorAll('.poison-target-btn').forEach(b => b.classList.remove('selected'));
+                  btn.classList.add('selected');
+                  // Auto-collapse after selection
+                  setTimeout(() => {
+                    poisonSelect.style.display = 'none';
+                  }, 300);
                 };
-                poisonTargets.appendChild(btn);
               });
-            } else if (poisonTargets) {
-              poisonTargets.style.display = 'none';
-              poisonTargets.innerHTML = '';
-              if (selectedDiv) selectedDiv.style.display = 'none';
-              poisonTarget = null;
             }
           };
         }
@@ -719,7 +782,7 @@ function init() {
       
       if (confirmBtn) {
         confirmBtn.style.display = 'block';
-        confirmBtn.textContent = 'Valider mes choix';
+        confirmBtn.textContent = 'Valider';
         confirmBtn.onclick = () => {
           submitAction('WITCH', { heal: useHeal, poison_target: poisonTarget });
           if (subtitle) subtitle.innerHTML = '<div style="color:#888;padding:20px;">✨ Potions utilisées...</div>';
@@ -862,11 +925,15 @@ function init() {
   // ============ VOTE ============
   let voteGridBuilt = false;
   let hasVoted = false;
+  let selectedVoteTarget = null;
+  let selectedVoteName = null;
   
   function showVoteScreen(phaseChanged) {
     if (phaseChanged) {
       voteGridBuilt = false;
       hasVoted = false;
+      selectedVoteTarget = null;
+      selectedVoteName = null;
     }
     
     if (currentScreen !== 'screenVote') {
@@ -877,48 +944,166 @@ function init() {
     if (voteGridBuilt) return;
     voteGridBuilt = true;
     
-    const grid = $('voteTargets');  // Correct ID from HTML
+    const grid = $('voteTargets');
+    const status = $('voteStatus');
+    
     if (!grid) {
       console.error('[LG] Vote targets grid not found!');
       return;
     }
     
-    console.log('[LG] Building vote grid');
+    console.log('[LG] Building vote grid with confirmation');
     
     // Can vote for anyone alive except yourself
     const targets = state.alive.filter(p => p.id !== config.playerId);
     
-    buildTargetGrid(grid, targets, async (id) => {
-      if (hasVoted) return; // Prevent double voting
+    // Build grid manually without auto-submit
+    grid.innerHTML = '';
+    targets.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'target-card';
+      card.dataset.id = p.id;
+      card.innerHTML = `
+        <div class="target-avatar">${(p.name || '?')[0].toUpperCase()}</div>
+        <div class="target-name">${escapeHtml(p.name)}</div>
+      `;
       
-      console.log('[LG] Voting for:', id);
-      try {
-        const res = await fetch(API_URL + '/api/vote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ voter_id: config.playerId, target_id: id })
-        });
-        const data = await res.json();
-        console.log('[LG] Vote result:', data);
-        if (data.ok) {
-          hasVoted = true;
-          markSelected(grid, id);
+      card.addEventListener('click', () => {
+        if (hasVoted) return;
+        
+        // Select this target
+        selectedVoteTarget = p.id;
+        selectedVoteName = p.name;
+        
+        // Update visual selection
+        grid.querySelectorAll('.target-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        
+        // Show/update confirm button
+        if (status) {
+          status.innerHTML = `
+            <button id="confirmVoteBtn" class="vote-confirm-btn">
+              ⚔️ Voter contre ${escapeHtml(p.name)}
+            </button>
+          `;
           
-          // Show confirmation
-          const status = $('voteStatus');
-          if (status) {
-            const targetName = targets.find(p => p.id === id)?.name || '???';
-            status.innerHTML = `<div class="vote-confirm">✓ Tu as voté contre ${escapeHtml(targetName)}</div>`;
-          }
+          $('confirmVoteBtn').addEventListener('click', submitVote);
         }
-      } catch (e) {
-        console.error('[LG] Vote failed:', e);
-      }
+      });
+      
+      grid.appendChild(card);
     });
     
-    // Clear status
+    // Initial status
+    if (status) {
+      status.innerHTML = '<div style="color:#888;font-size:14px;">Sélectionne un joueur puis confirme ton vote</div>';
+    }
+  }
+  
+  async function submitVote() {
+    if (hasVoted || !selectedVoteTarget) return;
+    
+    const btn = $('confirmVoteBtn');
     const status = $('voteStatus');
-    if (status) status.innerHTML = '';
+    
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Envoi du vote...';
+    }
+    
+    try {
+      const res = await fetch(API_URL + '/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voter_id: config.playerId, target_id: selectedVoteTarget })
+      });
+      const data = await res.json();
+      console.log('[LG] Vote result:', data);
+      
+      if (data.ok) {
+        hasVoted = true;
+        if (status) {
+          status.innerHTML = `<div class="vote-confirmed">✅ Tu as voté contre ${escapeHtml(selectedVoteName)}</div>`;
+        }
+      } else {
+        throw new Error(data.error || 'Vote failed');
+      }
+    } catch (e) {
+      console.error('[LG] Vote failed:', e);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = `⚔️ Voter contre ${escapeHtml(selectedVoteName)}`;
+      }
+    }
+  }
+  
+  // ============ DAY PHASE - Ready to Vote ============
+  let readyToVote = false;
+  
+  function showDayScreen(phaseChanged) {
+    if (phaseChanged) {
+      readyToVote = false;
+    }
+    
+    if (currentScreen !== 'screenDay') {
+      showScreen('screenDay');
+    }
+    
+    // Add ready to vote button if not already there
+    const dayContent = document.querySelector('#screenDay .screen-content');
+    let readyBtn = $('readyToVoteBtn');
+    
+    if (!readyBtn && dayContent) {
+      const btnHtml = `
+        <button id="readyToVoteBtn" class="ready-vote-btn">
+          🗳️ Je suis prêt à voter
+        </button>
+        <div id="readyCount" class="ready-count"></div>
+      `;
+      dayContent.insertAdjacentHTML('beforeend', btnHtml);
+      readyBtn = $('readyToVoteBtn');
+      
+      if (readyBtn) {
+        readyBtn.addEventListener('click', async () => {
+          if (readyToVote) return;
+          
+          readyBtn.disabled = true;
+          readyBtn.textContent = 'Envoi...';
+          
+          try {
+            const res = await fetch(API_URL + '/api/ready', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ player_id: config.playerId })
+            });
+            const data = await res.json();
+            
+            if (data.ok) {
+              readyToVote = true;
+              readyBtn.classList.add('ready');
+              readyBtn.innerHTML = '✅ En attente du vote...';
+              
+              // Update count display
+              const countEl = $('readyCount');
+              if (countEl) {
+                countEl.textContent = `${data.ready_count} / ${data.total_alive} prêts`;
+              }
+            }
+          } catch (e) {
+            console.error('[LG] Ready failed:', e);
+            readyBtn.disabled = false;
+            readyBtn.textContent = '🗳️ Je suis prêt à voter';
+          }
+        });
+      }
+    }
+    
+    // Update ready button state
+    if (readyBtn && readyToVote) {
+      readyBtn.classList.add('ready');
+      readyBtn.innerHTML = '✅ En attente du vote...';
+      readyBtn.disabled = true;
+    }
   }
   
   function showVoteResult(msg) {
